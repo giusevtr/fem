@@ -1,4 +1,6 @@
 from mbi import Dataset, Domain
+from qm import QueryManager
+import argparse
 import numpy as np
 import sys,os
 import time
@@ -9,7 +11,7 @@ import matplotlib.pyplot as plt
 import oracle
 import util
 from tqdm import tqdm
-
+import benchmarks
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s
@@ -137,7 +139,44 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
 
     return fake_data
 
-# if __name__ == "__main__":
-#     d = Domain(('A', 'B', 'C'), (2, 2, 2))
-#     data = Dataset.synthetic(d, 10)
-#     print("test", data.df)
+if __name__ == "__main__":
+    description = ''
+    formatter = argparse.ArgumentDefaultsHelpFormatter
+    parser = argparse.ArgumentParser(description=description, formatter_class=formatter)
+    parser.add_argument('dataset', type=str, nargs=1, help='queries')
+    parser.add_argument('workload', type=int, nargs=1, help='queries')
+    parser.add_argument('marginal', type=int, nargs=1, help='queries')
+    parser.add_argument('eps0', type=float, nargs='+', help='hyperparameter')
+    parser.add_argument('noise', type=float, nargs='+', help='hyperparameter')
+    parser.add_argument('samples', type=int, nargs='+', help='hyperparameter')
+    parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
+    args = parser.parse_args()
+
+    print("=============================================")
+    print(vars(args))
+
+    ######################################################
+    ## Get dataset
+    ######################################################
+    data, workloads = benchmarks.randomKway(args.dataset[0], args.workload[0], args.marginal[0])
+    N = data.df.shape[0]
+
+    ######################################################
+    ## Get Queries
+    ######################################################
+    stime = time.time()
+    query_manager = QueryManager(data.domain, workloads)
+    print("Number of queries = ", len(query_manager.queries))
+
+    for eps in args.epsilon:
+        print("epsilon = ", eps, "=========>")
+        ######################################################
+        ## Generate synthetic data with eps
+        ######################################################
+        start_time = time.time()
+        syndata = generate(data=data, query_manager=query_manager, epsilon=eps, epsilon_0=args.eps0[0], exponential_scale=args.noise[0], samples=args.samples[0])
+        elapsed_time = time.time()-start_time
+
+        max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
+        print("epsilon, queries, max_error, time")
+        print("{},{},{:.5f},{:.5f}".format(eps, len(query_manager.queries), max_error, elapsed_time))
