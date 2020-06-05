@@ -4,7 +4,13 @@ create a conda environment
 conda create -n fem
 conda activate fem
 ````
-git clone private-pgm projet
+Install some packages 
+```
+conda install numpy 
+conda install pandas
+```
+
+Then get private-pgm projet
 ```
 cd /home/
 git clone https://github.com/ryan112358/private-pgm.git
