@@ -5,7 +5,9 @@ from qm import QueryManager
 import time
 import importlib
 import argparse
-from mbi import Dataset
+
+sys.path.append("../private-pgm/src")
+from mbi import Dataset, Domain
 import fem
 import tune_fem
 

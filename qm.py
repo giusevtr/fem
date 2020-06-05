@@ -1,7 +1,9 @@
 import numpy as np
 import itertools
 from collections.abc import Iterable
-from mbi import Dataset, Domain, FactoredInference
+
+import sys
+sys.path.append("../private-pgm/src")
 
 
 class QueryManager():
@@ -12,13 +14,15 @@ class QueryManager():
     def __init__(self, domain, workloads):
         self.domain = domain
         self.workloads =workloads
+        self.att_id = {}
         col_map = {}
         for i,col in enumerate(self.domain.attrs):
             col_map[col] = i
+            self.att_id[col] = i
         feat_pos =[]
         cur = 0
         for f, sz in enumerate(domain.shape):
-            feat_pos.append( list(range(cur, cur + sz)))
+            feat_pos.append(list(range(cur, cur + sz)))
             cur += sz
             # print("feat_pos[{}] = {}".format(f, feat_pos[f]))
         self.dim = np.sum(self.domain.shape)

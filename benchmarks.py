@@ -1,4 +1,7 @@
 import numpy as np
+
+import sys
+sys.path.append("../private-pgm/src")
 from mbi import Dataset
 import itertools
 

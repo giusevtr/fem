@@ -1,17 +1,18 @@
+import sys
+sys.path.append("../private-pgm/src")
 from mbi import Dataset, Domain
 from qm import QueryManager
 import argparse
 import numpy as np
-import sys,os
 import time
 import pandas as pd
-# from solvers.MIP_FEM0 import ftpl_best_response
 import multiprocessing as mp
-import matplotlib.pyplot as plt
 import oracle
 import util
 from tqdm import tqdm
 import benchmarks
+import itertools
+
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s
@@ -139,6 +140,43 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
 
     return fake_data
 
+
+def fem_grid_search(data, epsilon, query_manager, data_domain, data_size, n_ave=3, timeout=600):
+    epsarr = [0.003, 0.005, 0.007, 0.009]
+    noisearr = [1, 2, 3]
+    min_error = 100000
+    progress = tqdm(total=len(epsarr)*len(noisearr)*n_ave)
+    res = []
+    final_eps0, final_scale = (None, None)
+    for eps0, noise in itertools.product(epsarr, noisearr):
+        errors = []
+        for _ in range(n_ave):
+            start_time = time.time()
+            syndata = generate(data=data, query_manager=query_manager, epsilon=epsilon, epsilon_0=eps0,
+                                   exponential_scale=noise, samples=100, show_prgress=False)
+            elapsed_time = time.time() - start_time
+            if elapsed_time > timeout:
+                errors = None
+                break
+            max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
+            errors.append(max_error)
+            progress.update()
+
+        if errors is not None:
+            mean_max_error = np.mean(errors)
+            std_max_error = np.std(errors)
+            if mean_max_error < min_error:
+                final_eps0 = eps0
+                final_scale = noise
+                min_error = mean_max_error
+
+        res.append([eps0, noise, mean_max_error if errors else None, std_max_error if errors else None])
+
+        progress.set_postfix({'e0':eps0, 'noise':noise, 'error':mean_max_error, 'std':std_max_error})
+
+    names = ["epsilon_0", "noise", "mean tune error", "std tune error"]
+    return final_eps0, final_scale, min_error, pd.DataFrame(res, columns=names)
+
 if __name__ == "__main__":
     description = ''
     formatter = argparse.ArgumentDefaultsHelpFormatter
@@ -146,9 +184,9 @@ if __name__ == "__main__":
     parser.add_argument('dataset', type=str, nargs=1, help='queries')
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
-    parser.add_argument('eps0', type=float, nargs='+', help='hyperparameter')
-    parser.add_argument('noise', type=float, nargs='+', help='hyperparameter')
-    parser.add_argument('samples', type=int, nargs='+', help='hyperparameter')
+    parser.add_argument('eps0', type=float, nargs='1', help='hyperparameter')
+    parser.add_argument('noise', type=float, nargs='1', help='hyperparameter')
+    parser.add_argument('samples', type=int, nargs='1', help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
     args = parser.parse_args()
 
