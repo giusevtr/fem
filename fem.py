@@ -184,9 +184,9 @@ if __name__ == "__main__":
     parser.add_argument('dataset', type=str, nargs=1, help='queries')
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
-    parser.add_argument('eps0', type=float, nargs='1', help='hyperparameter')
-    parser.add_argument('noise', type=float, nargs='1', help='hyperparameter')
-    parser.add_argument('samples', type=int, nargs='1', help='hyperparameter')
+    parser.add_argument('eps0', type=float, nargs=1, help='hyperparameter')
+    parser.add_argument('noise', type=float, nargs=1, help='hyperparameter')
+    parser.add_argument('samples', type=int, nargs=1, help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
     args = parser.parse_args()
 
