@@ -9,7 +9,9 @@ import pandas as pd
 import multiprocessing as mp
 import oracle
 import util
+from tqdm import tqdm
 import benchmarks
+import itertools
 
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
@@ -19,24 +21,10 @@ def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
         fake_data.append(x)
 
 
+def oracle(query, real, ):
+    pass
 
-def get_rounds(epsilon, eps0, N):
-    delta = 1.0 / N ** 2
-    A = eps0*(np.exp(eps0)-1)
-    B = np.sqrt(2*np.log(1/delta))*eps0
-    C = -epsilon
-
-    sqrtT_1 = (-B + np.sqrt(B**2 - 4*A*C)) / (2*A)
-    sqrtT_2 = (-B - np.sqrt(B**2 - 4*A*C)) / (2*A)
-    if sqrtT_1 > 0:
-        T = sqrtT_1**2
-    else:
-        T = sqrtT_2**2
-    assert np.abs(epsilon - (np.sqrt(2*T*np.log(1/delta))*eps0 + T*eps0*(np.exp(eps0)-1))) < 1e-7, 'eps0 = {}, T = {}'.format(eps0, T)
-    return int(T)
-
-
-def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
+def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, show_prgress=True):
     domain = data.domain
     D = np.sum(domain.shape)
     N = data.df.shape[0]
@@ -58,65 +46,26 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
 
     final_syn_data = []
     t = -1
-    fem_start_time = time.time()
+    start_time = time.time()
     temp = []
+    if show_prgress:
+        # progress = tqdm(total=0.5 * epsilon ** 2)
+        progress = tqdm(total=epsilon)
+    last_eps = 0
 
-    T = get_rounds(epsilon, epsilon_0, N)
+    # Uniform distribution
+    fake_data = Dataset.synthetic(100)
+    while True:
+        t += 1
+        rho = 0.5 * epsilon_0 ** 2
+        rho_comp += rho  ## EM privacy
+        current_eps = rho_comp + 2 * np.sqrt(rho_comp * np.log(1 / delta))
 
-    # while True:
-    # for _ in range(T):
-
-    # for _ in trange(T):
-    for _ in range(T):
-        """
-        End early after timeout seconds 
-        """
-        if (timeout is not None) and time.time() - fem_start_time > timeout: break
-
-        """
-        Sample s times from FTPL
-        """
-        util.blockPrint()
-        num_processes = 8
-        s2 = int(1.0 + samples / num_processes)
-        samples_rem = samples
-        processes = []
-        manager = mp.Manager()
-        fake_temp = manager.list()
-
-        query_workload = query_manager.get_query_workload(prev_queries)
-        neg_query_workload = query_manager.get_query_workload(neg_queries)
-
-        for __ in range(num_processes):
-            temp_s = samples_rem if samples_rem - s2 < 0 else s2
-            samples_rem -= temp_s
-            noise = np.random.exponential(exponential_scale, (temp_s, D))
-            proc = mp.Process(target=gen_fake_data,
-                              args=(fake_temp, query_workload, neg_query_workload, noise, domain, alpha, temp_s))
-
-            proc.start()
-            processes.append(proc)
-
-        assert samples_rem == 0, "samples_rem = {}".format(samples_rem)
-        for p in processes:
-            p.join()
-
-        util.enablePrint()
-        oh_fake_data = []
-        assert len(fake_temp) > 0
-        for x in fake_temp:
-            oh_fake_data.append(x)
-            temp.append(x)
-            # if current_eps >= epsilon / 2:  ## this trick haves the final error
-            if t >= T / 2:  ## this trick haves the final error
-                final_syn_data.append(x)
-
-        assert len(oh_fake_data) == samples, "len(D_hat) = {} len(fake_data_ = {}".format(len(oh_fake_data), len(fake_temp))
-        for i in range(samples):
-            assert len(oh_fake_data[i]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
-        assert not final_syn_data or len(final_syn_data[0]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
-
-        fake_data = Dataset(pd.DataFrame(util.decode_dataset(oh_fake_data, domain), columns=domain.attrs), domain)
+        if current_eps > epsilon:
+            break
+        if show_prgress:
+            progress.update(current_eps-last_eps)
+            last_eps = current_eps
 
         """
         Compute Exponential Mechanism distribution
@@ -143,12 +92,53 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
         else:
             neg_queries.append(q_t_ind - Q_size)
 
+        """
+        Iterative projection
+        """
+        fake_data = Dataset(pd.DataFrame(util.decode_dataset(oh_fake_data, domain), columns=domain.attrs), domain)
+
     if len(final_syn_data) == 0:
         final_syn_data = temp
     fake_data = Dataset(pd.DataFrame(util.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
 
     return fake_data
 
+
+def fem_grid_search(data, epsilon, query_manager, data_domain, data_size, n_ave=3, timeout=600):
+    epsarr = [0.003, 0.005, 0.007, 0.009]
+    noisearr = [1, 2, 3]
+    min_error = 100000
+    progress = tqdm(total=len(epsarr)*len(noisearr)*n_ave)
+    res = []
+    final_eps0, final_scale = (None, None)
+    for eps0, noise in itertools.product(epsarr, noisearr):
+        errors = []
+        for _ in range(n_ave):
+            start_time = time.time()
+            syndata = generate(data=data, query_manager=query_manager, epsilon=epsilon, epsilon_0=eps0,
+                                   exponential_scale=noise, samples=100, show_prgress=False)
+            elapsed_time = time.time() - start_time
+            if elapsed_time > timeout:
+                errors = None
+                break
+            max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
+            errors.append(max_error)
+            progress.update()
+
+        if errors is not None:
+            mean_max_error = np.mean(errors)
+            std_max_error = np.std(errors)
+            if mean_max_error < min_error:
+                final_eps0 = eps0
+                final_scale = noise
+                min_error = mean_max_error
+
+        res.append([eps0, noise, mean_max_error if errors else None, std_max_error if errors else None])
+
+        progress.set_postfix({'e0':eps0, 'noise':noise, 'error':mean_max_error, 'std':std_max_error})
+
+    names = ["epsilon_0", "noise", "mean tune error", "std tune error"]
+    return final_eps0, final_scale, min_error, pd.DataFrame(res, columns=names)
 
 if __name__ == "__main__":
     description = ''
@@ -157,9 +147,9 @@ if __name__ == "__main__":
     parser.add_argument('dataset', type=str, nargs=1, help='queries')
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
-    parser.add_argument('eps0', type=float, nargs=1, help='hyperparameter')
-    parser.add_argument('noise', type=float, nargs=1, help='hyperparameter')
-    parser.add_argument('samples', type=int, nargs=1, help='hyperparameter')
+    parser.add_argument('eps0', type=float, nargs='1', help='hyperparameter')
+    parser.add_argument('noise', type=float, nargs='1', help='hyperparameter')
+    parser.add_argument('samples', type=int, nargs='1', help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
     args = parser.parse_args()
 
