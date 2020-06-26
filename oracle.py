@@ -37,7 +37,7 @@ def solve(queries, neg_queries, sigma, domain, alpha):
     obj1 = quicksum(c[i] for i in range(num_queries))
     obj2 = quicksum(x[i] * sigma[i] for i in range(dim))
     #print("sigma ", sigma)
-    model.setObjective(obj1-obj2 , GRB.MAXIMIZE)
+    model.setObjective(obj1-obj2, GRB.MAXIMIZE)
     """
     Each features must have 1
     """

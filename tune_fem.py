@@ -1,17 +1,17 @@
 import itertools
 import fem
 import time
-from time import sleep
 import sys
 sys.path.append("../private-pgm/src")
 from mbi import Dataset, Domain
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
-import os
-import matplotlib.pyplot as plt
 from qm import QueryManager
 import benchmarks
+import matplotlib.pyplot as plt
+from matplotlib import cm
+
 
 def plot_bins(ans, title='None'):
     plt.title(title)
@@ -23,6 +23,7 @@ def plot_bins(ans, title='None'):
         plt.text(arr[1][i] + width/2, arr[0][i], str(int(arr[0][i])))
     plt.xlim([0,1])
     plt.show()
+
 
 def get_dummy_row(domain, bag):
     L = len(domain.attrs)
@@ -45,7 +46,7 @@ def get_dummy_data2(domain, data_size, query_manager, display=False):
 
     bag = {}
     for i in range(len(query_manager.workloads)):
-        if len(bag) >= num_attr//2:break
+        if len(bag) >= num_attr//2: break
         for attr in query_manager.workloads[i]:
             id = query_manager.att_id[attr]
             if id not in bag:
@@ -138,16 +139,43 @@ def optimize_parameters(epsilon, query_manager, data_domain, data_size, n_ave=3,
     return eps_0, scale, samples, min_error
 
 
+def plot_results(tune_results_path):
+    df = pd.read_csv(tune_results_path)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    eps0 = df['epsilon_0'].values
+    noise = df['noise'].values
+    error = df['mean tune error'].values
+
+    Z_map = {}
+
+    for i, (e, n) in enumerate(zip(eps0, noise)):
+        if e not in Z_map:
+            Z_map[e] = {}
+        Z_map[e][n] = error[i]
+
+    eps0 = np.unique(eps0)
+    noise = np.unique(noise)
+    X, Y = np.meshgrid(eps0, noise)
+    Z = np.array([[Z_map[e][n] for e in eps0] for n in noise])
+    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                           linewidth=0, antialiased=False)
+
+    plt.show()
+
+
 if __name__ == "__main__":
-    # optimize_parameters(epsilon=0.5, query_manager=None, data_domain=None, data_size=100)
-    adult, workload = benchmarks.randomKway('adult', 24, 3)
-    query_manager = QueryManager(adult.domain, workload)
-    #
+    plot_results(tune_results_path='Results/tune_results_0.1.csv')
+    # # optimize_parameters(epsilon=0.5, query_manager=None, data_domain=None, data_size=100)
+    # adult, workload = benchmarks.randomKway('adult', 60, 5)
+    # query_manager = QueryManager(adult.domain, workload)
+    # #
     # ans = query_manager.get_answer(adult)
     # print("max adult answer: ", np.max(ans))
     # plot_bins(ans, title='Adult')
-    # print(query_manager.queries[0])
-    data = get_dummy_data2(adult.domain, 100, query_manager, display=True)
-    # print(data.df)
-    # print(adult.domain)
-    # print(get_dummy_row(adult.domain))
+    # # print(query_manager.queries[0])
+    # data = get_dummy_data2(adult.domain, 100, query_manager, display=True)
+    # # print(data.df)
+    # # print(adult.domain)
+    # # print(get_dummy_row(adult.domain))

@@ -13,13 +13,13 @@ class QueryManager():
     # def __init__(self, domain, measurements, workloads):
     def __init__(self, domain, workloads):
         self.domain = domain
-        self.workloads =workloads
+        self.workloads = workloads
         self.att_id = {}
         col_map = {}
         for i,col in enumerate(self.domain.attrs):
             col_map[col] = i
             self.att_id[col] = i
-        feat_pos =[]
+        feat_pos = []
         cur = 0
         for f, sz in enumerate(domain.shape):
             feat_pos.append(list(range(cur, cur + sz)))
@@ -57,7 +57,7 @@ class QueryManager():
                 w[p] = 1
             W.append(w)
         if len(W) == 1:
-            W = np.array(W).reshape(1,-1)
+            W = np.array(W).reshape(1, -1)
         else:
             W = np.array(W)
         return W
