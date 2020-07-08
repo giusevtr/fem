@@ -24,29 +24,30 @@ def optimize(data, query_manager, epsilon, samples, max_iter, timeout=300, show_
     ## 2-dim Bayesian Optimization on epsilon_0 and noise
     ######################################################
     def obj_func(x):
-        eps0 = x[:, 0]
-        noise = x[:, 1]
-        print("eps0 = ", eps0)
-        print("noise = ", noise)
+        eps0 = x[:, 0][0]
+        noise = x[:, 1][0]
+        # print("eps0 = ", eps0)
+        # print("noise = ", noise)
 
         # the blackbox function
         start_time = time.time()
-        syndata = generate(data=data, 
+        syndata, status = generate(data=data,
                            query_manager=query_manager, 
                            epsilon=epsilon, 
                            epsilon_0=eps0, 
                            exponential_scale=noise, 
-                           samples=args.samples[0],
+                           samples=samples,
                            timeout=timeout, 
-                           show_prgress=show_prgress)
+                           show_prgress=True)
         elapsed_time = time.time()-start_time
         max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
-        print("epsilon, queries, max_error, time")
-        print("{},{},{:.5f},{:.5f}".format(epsilon, len(query_manager.queries), max_error, elapsed_time))
+        # print("epsilon, queries, max_error, time, status")
+        # print("{},{},{:.5f},{:.5f},{}".format(epsilon, len(query_manager.queries), max_error, elapsed_time,status))
+        # print()
         return max_error
 
-    domain = [{'name': 'eps0', 'type': 'continuous', 'domain': (0.001,epsilon/20)},
-              {'name': 'noise', 'type': 'discrete', 'domain': (0.75, 1, 1.25)}]
+    domain = [{'name': 'eps0', 'type': 'continuous', 'domain': (0.001, epsilon/10)},
+              {'name': 'noise', 'type': 'continuous', 'domain': (0.75, 3)}]
 
     # X_init = np.array([[epsilon/10]])
 
@@ -60,10 +61,11 @@ def optimize(data, query_manager, epsilon, samples, max_iter, timeout=300, show_
     print("Value of (x,y) that minimises the objective:"+str(optimizer.x_opt))    
     print("Minimum value of the objective: "+str(optimizer.fx_opt)) 
     
-    if show_plot:
-        optimizer.plot_acquisition()
+    # if show_plot:
+    #     optimizer.plot_acquisition()
 
-    return optimizer.get_evaluations()
+    # return optimizer.get_evaluations()
+    return optimizer
 
 def post_process(evals, epsilon):
     # extracting data
@@ -87,10 +89,10 @@ def post_process(evals, epsilon):
     fig.suptitle('Dataset ADULT with 3-way marginal queries, eps = %.4f optimized over eps0 and noise' % (epsilon))
 
     # First subplot - scatter plot
-    ax = fig.add_subplot(1,2,1, projection='3d',xlabel="eps0",ylabel="noise",zlabel="max_error")
+    ax = fig.add_subplot(1,2,1, projection='3d', xlabel="eps0", ylabel="noise",zlabel="max_error")
     ax.scatter(x,y,z)
     # Second subplot - bar plot
-    ax = fig.add_subplot(1,2,2, projection='3d',xlabel="eps0",ylabel="noise",zlabel="max_error")
+    ax = fig.add_subplot(1,2,2, projection='3d', xlabel="eps0", ylabel="noise",zlabel="max_error")
     ax.bar(x, z, y, width=(max(x)-min(x))/28, zdir='y', alpha=0.7)
     ax.set_yticks([0.75,1,1.25])
 
@@ -141,17 +143,17 @@ if __name__ == "__main__":
     print("Number of queries = ", len(query_manager.queries))
     print("epsilon = ", eps, "=========>")    
 
-    # evals = optimize(data=data, 
-    #                  query_manager=query_manager, 
-    #                  epsilon=eps, 
-    #                  samples=args.samples[0],
-    #                  max_iter=args.max_iter[0],
-    #                  timeout=30,
-    #                  show_plot=False)
-    # post_process(evals, eps)
+    evals = optimize(data=data,
+                     query_manager=query_manager,
+                     epsilon=eps,
+                     samples=args.samples[0],
+                     max_iter=args.max_iter[0],
+                     timeout=300,
+                     show_plot=False)
+    post_process(evals, eps)
 
-    opt_grid_search(data=data, 
-                    query_manager=query_manager,
-                    samples=args.samples[0],
-                    max_iter=args.max_iter[0],
-                    timeout=300)
+    # opt_grid_search(data=data,
+    #                 query_manager=query_manager,
+    #                 samples=args.samples[0],
+    #                 max_iter=args.max_iter[0],
+    #                 timeout=300)

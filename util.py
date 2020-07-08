@@ -126,3 +126,27 @@ def decode_dataset(oh_data, domain):
             c+= att_size
         data.append(row)
     return np.array(data)
+
+
+def get_rounds_zCDP(epsilon, eps0, delta):
+    T = 0
+    while True:
+        rho = (T+1) * 0.5 * eps0 ** 2
+        current_eps = rho + 2 * np.sqrt(rho * np.log(1 / delta))
+        if current_eps > epsilon: break
+        T += 1
+    return T
+
+def get_rounds(epsilon, eps0, delta):
+    A = eps0*(np.exp(eps0)-1)
+    B = np.sqrt(2*np.log(1/delta))*eps0
+    C = -epsilon
+
+    sqrtT_1 = (-B + np.sqrt(B**2 - 4*A*C)) / (2*A)
+    sqrtT_2 = (-B - np.sqrt(B**2 - 4*A*C)) / (2*A)
+    if sqrtT_1 > 0:
+        T = sqrtT_1**2
+    else:
+        T = sqrtT_2**2
+    assert np.abs(epsilon - (np.sqrt(2*T*np.log(1/delta))*eps0 + T*eps0*(np.exp(eps0)-1))) < 1e-7, 'eps0 = {}, T = {}'.format(eps0, T)
+    return int(T)
