@@ -18,8 +18,8 @@ ONE = np.ones(3)
 
 
 def fem_grid_search(data, epsilon, query_manager, n_ave=5, timeout=300):
-    epsarr = [ 0.003, 0.005, 0.007, 0.009, 0.011]
-    noisearr = [1, 2, 3]
+    epsarr = [0.003, 0.005, 0.007, 0.009, 0.011, 0.015, 0.017, 0.19]
+    noisearr = [1, 2, 3, 4]
 
     # epsarr = 0.003 * ONE + 0.0005 * A
     # noisearr = ONE + 0.25 * A
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     if os.path.exists(file_name):
         dfprev = pd.read_csv(file_name)
         final_df = final_df.append(dfprev, sort=False)
-    final_df.to_csv(file_name)
+    final_df.to_csv(file_name, index=False)
