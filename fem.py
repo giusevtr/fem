@@ -10,28 +10,13 @@ import multiprocessing as mp
 import oracle
 import util
 import benchmarks
-
+from tqdm import tqdm
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s
     for i in range(s):
         x = oracle.solve(qW, neg_qW, noise[i,:], domain, alpha)
         fake_data.append(x)
-
-
-def get_rounds(epsilon, eps0, delta):
-    A = eps0*(np.exp(eps0)-1)
-    B = np.sqrt(2*np.log(1/delta))*eps0
-    C = -epsilon
-
-    sqrtT_1 = (-B + np.sqrt(B**2 - 4*A*C)) / (2*A)
-    sqrtT_2 = (-B - np.sqrt(B**2 - 4*A*C)) / (2*A)
-    if sqrtT_1 > 0:
-        T = sqrtT_1**2
-    else:
-        T = sqrtT_2**2
-    assert np.abs(epsilon - (np.sqrt(2*T*np.log(1/delta))*eps0 + T*eps0*(np.exp(eps0)-1))) < 1e-7, 'eps0 = {}, T = {}'.format(eps0, T)
-    return int(T)
 
 
 def get_eps0(eps0, r1, t):
@@ -62,17 +47,21 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     fem_start_time = time.time()
     temp = []
 
-    T = get_rounds(epsilon, epsilon_0, delta)
+
+    T = util.get_rounds(epsilon, epsilon_0, delta)
+    if show_prgress:
+        progress_bar = tqdm(total=T)
     status = 'OK'
     for t in range(T):
+        if show_prgress: progress_bar.update()
         """
         End early after timeout seconds 
         """
         if (timeout is not None) and time.time() - fem_start_time > timeout:
             status = 'Timeout'
             break
-        if (timeout is not None) and t == 1 and (time.time() - fem_start_time)*T > timeout:
-            status = 'Ending Eary: {:.2f}s'.format((time.time() - fem_start_time)*T)
+        if (timeout is not None) and t >= 1 and (time.time() - fem_start_time)*T/t > timeout:
+            status = 'Ending Early ({:.2f}s) '.format((time.time() - fem_start_time)*T/t)
             break
 
 
@@ -111,8 +100,8 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
             oh_fake_data.append(x)
             temp.append(x)
             # if current_eps >= epsilon / 2:  ## this trick haves the final error
-            if t >= T / 2:  ## this trick haves the final error
-                final_syn_data.append(x)
+            # if t >= T / 2:  ## this trick haves the final error
+            final_syn_data.append(x)
 
         assert len(oh_fake_data) == samples, "len(D_hat) = {} len(fake_data_ = {}".format(len(oh_fake_data), len(fake_temp))
         for i in range(samples):
@@ -147,10 +136,15 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
             neg_queries.append(q_t_ind - Q_size)
 
     if len(final_syn_data) == 0:
-        status = status + '-syn data.'
+        status = status + '---syn data.'
         fake_data = Dataset.synthetic(domain, 100)
     else:
+        if status == 'OK':
+            # Return top halve
+            final_syn_data = np.array(final_syn_data)
+            final_syn_data = final_syn_data[T//2:, :]
         fake_data = Dataset(pd.DataFrame(util.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
+    if show_prgress:progress_bar.close()
     return fake_data, status
 
 
