@@ -10,7 +10,6 @@ class QueryManager():
     """< 1e-9
     K-marginal queries manager
     """
-    # def __init__(self, domain, measurements, workloads):
     def __init__(self, domain, workloads):
         self.domain = domain
         self.workloads = workloads
@@ -24,7 +23,6 @@ class QueryManager():
         for f, sz in enumerate(domain.shape):
             feat_pos.append(list(range(cur, cur + sz)))
             cur += sz
-            # print("feat_pos[{}] = {}".format(f, feat_pos[f]))
         self.dim = np.sum(self.domain.shape)
         self.queries = []
         for feat in self.workloads:
@@ -35,9 +33,7 @@ class QueryManager():
                 positions.append(feat_pos[i])
             for tup in itertools.product(*positions):
                 self.queries.append(tup)
-
         self.num_queries = len(self.queries)
-
 
     def get_small_separator_workload(self):
         W = []
