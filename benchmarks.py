@@ -5,11 +5,13 @@ sys.path.append("../private-pgm/src")
 from mbi import Dataset
 import itertools
 
+
 def randomKway(name, number, marginal, seed=0):
     path = "Datasets/{}.csv".format(name)
     domain = "Datasets/{}-domain.json".format(name)
     data = Dataset.load(path, domain)
     return data, randomKwayData(data, number, marginal, seed)
+
 
 def randomKwayData(data, number, marginal, seed=0):
     prng = np.random.RandomState(seed)

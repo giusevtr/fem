@@ -19,9 +19,7 @@ def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
         fake_data.append(x)
 
 
-
-def get_rounds(epsilon, eps0, N):
-    delta = 1.0 / N ** 2
+def get_rounds(epsilon, eps0, delta):
     A = eps0*(np.exp(eps0)-1)
     B = np.sqrt(2*np.log(1/delta))*eps0
     C = -epsilon
@@ -34,6 +32,10 @@ def get_rounds(epsilon, eps0, N):
         T = sqrtT_2**2
     assert np.abs(epsilon - (np.sqrt(2*T*np.log(1/delta))*eps0 + T*eps0*(np.exp(eps0)-1))) < 1e-7, 'eps0 = {}, T = {}'.format(eps0, T)
     return int(T)
+
+
+def get_eps0(eps0, r1, t):
+    return eps0 + r1*t
 
 
 def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
@@ -57,21 +59,22 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     neg_real_answers = 1 - real_answers
 
     final_syn_data = []
-    t = -1
     fem_start_time = time.time()
     temp = []
 
-    T = get_rounds(epsilon, epsilon_0, N)
-
-    # while True:
-    # for _ in range(T):
-
-    # for _ in trange(T):
-    for _ in range(T):
+    T = get_rounds(epsilon, epsilon_0, delta)
+    status = 'OK'
+    for t in range(T):
         """
         End early after timeout seconds 
         """
-        if (timeout is not None) and time.time() - fem_start_time > timeout: break
+        if (timeout is not None) and time.time() - fem_start_time > timeout:
+            status = 'Timeout'
+            break
+        if (timeout is not None) and t == 1 and (time.time() - fem_start_time)*T > timeout:
+            status = 'Ending Eary: {:.2f}s'.format((time.time() - fem_start_time)*T)
+            break
+
 
         """
         Sample s times from FTPL
@@ -144,10 +147,11 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
             neg_queries.append(q_t_ind - Q_size)
 
     if len(final_syn_data) == 0:
-        final_syn_data = temp
-    fake_data = Dataset(pd.DataFrame(util.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
-
-    return fake_data
+        status = status + '-syn data.'
+        fake_data = Dataset.synthetic(domain, 100)
+    else:
+        fake_data = Dataset(pd.DataFrame(util.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
+    return fake_data, status
 
 
 if __name__ == "__main__":
@@ -172,6 +176,12 @@ if __name__ == "__main__":
     data, workloads = benchmarks.randomKway(args.dataset[0], args.workload[0], args.marginal[0])
     N = data.df.shape[0]
 
+
+    print("True answers: ")
+    for proj in workloads:
+        dp = data.project(proj).datavector()
+        print(dp[:10])
+    print("============")
     ######################################################
     ## Get Queries
     ######################################################
@@ -185,9 +195,9 @@ if __name__ == "__main__":
         ## Generate synthetic data with eps
         ######################################################
         start_time = time.time()
-        syndata = generate(data=data, query_manager=query_manager, epsilon=eps, epsilon_0=args.eps0[0], exponential_scale=args.noise[0], samples=args.samples[0])
+        syndata, status = generate(data=data, query_manager=query_manager, epsilon=eps, epsilon_0=args.eps0[0], exponential_scale=args.noise[0], samples=args.samples[0], timeout=300)
         elapsed_time = time.time()-start_time
 
         max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
-        print("epsilon, queries, max_error, time")
-        print("{},{},{:.5f},{:.5f}".format(eps, len(query_manager.queries), max_error, elapsed_time))
+        print("epsilon, queries, max_error, time, status")
+        print("{},{},{:.5f},{:.5f},{}".format(eps, len(query_manager.queries), max_error, elapsed_time,status))
