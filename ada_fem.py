@@ -23,7 +23,7 @@ def get_eps0(eps0, r1, t):
     return eps0 + r1*t
 
 
-def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
+def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptive, samples, alpha=0, timeout=None, show_prgress=True):
     domain = data.domain
     D = np.sum(domain.shape)
     N = data.df.shape[0]
@@ -48,11 +48,14 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     temp = []
 
 
-    T = util.get_rounds(epsilon, epsilon_0, delta)
+    # T = util.get_rounds(epsilon, epsilon_0, delta)
+    T = util.get_rounds_zCDP(epsilon, epsilon_0, adaptive, delta)
     if show_prgress:
         progress_bar = tqdm(total=T)
     status = 'OK'
     for t in range(T):
+        eps_t = epsilon_0 + adaptive*t
+
         if show_prgress: progress_bar.update()
         """
         End early after timeout seconds 
@@ -118,7 +121,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
 
         score = np.append(real_answers - fake_answers, neg_real_answers - neg_fake_answers)
 
-        EM_dist_0 = np.exp(epsilon_0 * score * N / 2, dtype=np.float128)
+        EM_dist_0 = np.exp(eps_t * score * N / 2, dtype=np.float128)
         sum = np.sum(EM_dist_0)
         assert sum > 0 and not np.isinf(sum)
         EM_dist = EM_dist_0 / sum
@@ -157,6 +160,7 @@ if __name__ == "__main__":
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
     parser.add_argument('eps0', type=float, nargs=1, help='hyperparameter')
     parser.add_argument('noise', type=float, nargs=1, help='hyperparameter')
+    parser.add_argument('adaptive', type=float, nargs=1, help='hyperparameter')
     parser.add_argument('samples', type=int, nargs=1, help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
     args = parser.parse_args()
@@ -189,7 +193,12 @@ if __name__ == "__main__":
         ## Generate synthetic data with eps
         ######################################################
         start_time = time.time()
-        syndata, status = generate(data=data, query_manager=query_manager, epsilon=eps, epsilon_0=args.eps0[0], exponential_scale=args.noise[0], samples=args.samples[0], timeout=300)
+        syndata, status = generate(data=data, query_manager=query_manager,
+                                   epsilon=eps,
+                                   epsilon_0=args.eps0[0],
+                                   exponential_scale=args.noise[0],
+                                   adaptive=args.adaptive[0],
+                                   samples=args.samples[0], timeout=300)
         elapsed_time = time.time()-start_time
 
         max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
