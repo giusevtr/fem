@@ -67,8 +67,9 @@ def optimize(data, query_manager, epsilon, samples, max_iter, timeout=300, show_
     # return optimizer.get_evaluations()
     return optimizer
 
-def post_process(evals, epsilon):
+def post_process(opt, epsilon):
     # extracting data
+    evals = opt.get_evaluations()
     ins = evals[0]
     outs = evals[1]
     x = ins[:,0]
@@ -143,14 +144,14 @@ if __name__ == "__main__":
     print("Number of queries = ", len(query_manager.queries))
     print("epsilon = ", eps, "=========>")    
 
-    evals = optimize(data=data,
+    opt = optimize(data=data,
                      query_manager=query_manager,
                      epsilon=eps,
                      samples=args.samples[0],
                      max_iter=args.max_iter[0],
                      timeout=300,
                      show_plot=False)
-    post_process(evals, eps)
+    post_process(opt, eps)
 
     # opt_grid_search(data=data,
     #                 query_manager=query_manager,
