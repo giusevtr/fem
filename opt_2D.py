@@ -19,7 +19,7 @@ from GPyOpt.methods import BayesianOptimization
 
 import matplotlib.pyplot as plt
 
-def optimize(data, query_manager, epsilon, samples, max_iter, timeout=300, show_prgress=False, show_plot=True):
+def optimize(data, query_manager, epsilon, samples, max_iter=None, max_time=10000000 timeout=300, show_prgress=False, show_plot=True):
     ######################################################
     ## 2-dim Bayesian Optimization on epsilon_0 and noise
     ######################################################
@@ -56,7 +56,7 @@ def optimize(data, query_manager, epsilon, samples, max_iter, timeout=300, show_
                                     #  X=X_init,
                                      normalize_Y=False, 
                                      exact_feval=True)
-    optimizer.run_optimization(max_iter=max_iter)
+    optimizer.run_optimization(max_iter=max_iter, max_time=max_time)
 
     print("Value of (x,y) that minimises the objective:"+str(optimizer.x_opt))    
     print("Minimum value of the objective: "+str(optimizer.fx_opt)) 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
     parser.add_argument('samples', type=int, nargs=1, help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
-    parser.add_argument('max_iter', type=int, nargs=1, help='queries')
+#     parser.add_argument('max_iter', type=int, nargs=1, help='queries')
     args = parser.parse_args()
     eps = args.epsilon[0]
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
                      query_manager=query_manager,
                      epsilon=eps,
                      samples=args.samples[0],
-                     max_iter=args.max_iter[0],
+#                      max_iter=args.max_iter[0],
                      timeout=300,
                      show_plot=False)
     post_process(opt, eps)
