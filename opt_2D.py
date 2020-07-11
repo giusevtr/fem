@@ -19,7 +19,7 @@ from GPyOpt.methods import BayesianOptimization
 
 import matplotlib.pyplot as plt
 
-def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=10000000, timeout=300, show_prgress=False, show_plot=True):
+def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=None, timeout=300, show_prgress=False, show_plot=True):
     ######################################################
     ## 2-dim Bayesian Optimization on epsilon_0 and noise
     ######################################################
