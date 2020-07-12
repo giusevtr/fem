@@ -26,8 +26,6 @@ def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=
     def obj_func(x):
         eps0 = x[:, 0][0]
         noise = x[:, 1][0]
-        # print("eps0 = ", eps0)
-        # print("noise = ", noise)
 
         # the blackbox function
         start_time = time.time()
@@ -41,19 +39,17 @@ def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=
                            show_prgress=True)
         elapsed_time = time.time()-start_time
         max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
-        # print("epsilon, queries, max_error, time, status")
-        # print("{},{},{:.5f},{:.5f},{}".format(epsilon, len(query_manager.queries), max_error, elapsed_time,status))
-        # print()
+        print("epsilon0, noise, max_error, time, status")
+        print("{}, {}, {:.5f}, {:.5f}, {}".format(eps0, noise, max_error, elapsed_time,status))
+        print()
         return max_error
 
     domain = [{'name': 'eps0', 'type': 'continuous', 'domain': (0.001, epsilon/10)},
               {'name': 'noise', 'type': 'continuous', 'domain': (0.75, 3)}]
 
-    # X_init = np.array([[epsilon/10]])
 
     optimizer = BayesianOptimization(f=obj_func, 
                                      domain=domain, 
-                                    #  X=X_init,
                                      normalize_Y=False, 
                                      exact_feval=True)
     optimizer.run_optimization(max_iter=max_iter, max_time=max_time)
@@ -61,10 +57,6 @@ def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=
     print("Value of (x,y) that minimises the objective:"+str(optimizer.x_opt))    
     print("Minimum value of the objective: "+str(optimizer.fx_opt)) 
     
-    # if show_plot:
-    #     optimizer.plot_acquisition()
-
-    # return optimizer.get_evaluations()
     return optimizer
 
 def post_process(opt, epsilon):
@@ -99,6 +91,8 @@ def post_process(opt, epsilon):
 
     plt.savefig('opt_2D_eps=%.4f.png' % (epsilon))
 
+    opt.plot_convergence('opt_conv_%.4f.png' % (epsilon))
+
 def opt_grid_search(data, query_manager,samples, max_iter, timeout=300, show_prgress=False):
     epsarr = [0.1 ,0.2, 0.3, 0.4, 0.5]
     errors = []
@@ -131,7 +125,6 @@ if __name__ == "__main__":
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
     parser.add_argument('samples', type=int, nargs=1, help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
-#     parser.add_argument('max_iter', type=int, nargs=1, help='queries')
     args = parser.parse_args()
     eps = args.epsilon[0]
 
@@ -148,8 +141,9 @@ if __name__ == "__main__":
                      query_manager=query_manager,
                      epsilon=eps,
                      samples=args.samples[0],
-#                      max_iter=args.max_iter[0],
-                     timeout=300,
+                    #  max_iter=200,
+                     max_time=600,
+                     timeout=630,
                      show_plot=False)
     post_process(opt, eps)
 
