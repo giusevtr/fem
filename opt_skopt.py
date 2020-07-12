@@ -19,12 +19,11 @@ from skopt import gp_minimize
 from skopt.plots import plot_convergence
 import matplotlib.pyplot as plt
 
-def optimize(data, query_manager, epsilon, samples, max_iter=10, timeout=300, show_prgress=True, show_plot=False):
+def optimize(data, query_manager, epsilon, samples, max_iter=0, max_time=1000000000, timeout=300, show_prgress=True, show_plot=False):
     ######################################################
     ## 2-dim Bayesian Optimization on epsilon_0 and noise
     ######################################################
     def obj_func(x):
-        # print(x)
         eps0 = x[0]
         noise = x[1]
 
@@ -45,20 +44,18 @@ def optimize(data, query_manager, epsilon, samples, max_iter=10, timeout=300, sh
         print()
         return max_error
 
-    domain = [(0.001, epsilon/10),(0.75, 3)]
-
-    # X_init = np.array([[epsilon/10]])
+    domain = [(0.001, epsilon/20),(0.75, 3)]
 
     results = gp_minimize(func=obj_func, 
                           dimensions=domain,
                           n_calls=max_iter,
-                        #   n_random_starts=5,
-                          acq_func="EI")
+                          n_random_starts=5,
+                          acq_func="PI")
+                        #   acq_func="EI")
 
     print("Value of (x,y) that minimises the objective:"+str(results.x))    
     print("Minimum value of the objective: "+str(results.fun)) 
-    
-    # print(results)
+
     return results
 
 def post_process(results, epsilon):
@@ -75,9 +72,16 @@ def post_process(results, epsilon):
     data = np.array([x,y,z]).T
     df = pd.DataFrame(data)
     df.to_csv('opt_2D_eps=%.4f.csv' % (epsilon))
-             
+
     ######################################################
-    ## Saving to png
+    ## convergence plot
+    ######################################################  
+    fig = plt.figure()   
+    ax = plot_convergence(results)
+    plt.savefig('opt_convergence_eps=%.4f.png' % (epsilon))
+
+    ######################################################
+    ## Saving to png --- this isn't working for some reason
     ######################################################  
     # fig = plt.figure(figsize=plt.figaspect(0.3))
     # fig.suptitle('Dataset ADULT with 3-way marginal queries, eps = %.4f optimized over eps0 and noise' % (epsilon))
@@ -91,14 +95,6 @@ def post_process(results, epsilon):
     # ax.set_yticks([0.75,1,1.25])
 
     # plt.savefig('opt_2D_eps=%.4f.png' % (epsilon))
-
-    ######################################################
-    ## convrgence plot
-    ######################################################  
-    # fig = plt.figure()   
-    # ax = plot_convergence(results)
-    # plt.savefig('opt_convergence_eps=%.4f.png' % (epsilon))
-    plot_convergence(results)
 
 def opt_grid_search(data, query_manager,samples, max_iter, timeout=300, show_prgress=False):
     epsarr = [0.1 ,0.2, 0.3, 0.4, 0.5]
@@ -150,7 +146,7 @@ if __name__ == "__main__":
                      epsilon=eps,
                      samples=args.samples[0],
                      max_iter=args.max_iter[0],
-                     timeout=30,
+                     timeout=600,
                      show_plot=False)
     post_process(opt, eps)
 
