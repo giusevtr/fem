@@ -24,9 +24,15 @@ def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=
     ## 2-dim Bayesian Optimization on epsilon_0 and noise
     ######################################################
     def obj_func(x):
-        eps0 = x[:, 0][0]
-        noise = x[:, 1][0]
+        x1 = x[:, 0][0]
+        x2 = x[:, 1][0]
 
+        # rescaling from (0,1)
+        w1 = epsilon/10 - 0.001
+        w2 = 3 - 0.75
+        eps0 = 0.001 + w1 * x1
+        noise = 0.75 + w2 * x2
+        
         # the blackbox function
         start_time = time.time()
         syndata, status = generate(data=data,
@@ -44,9 +50,11 @@ def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=
         print()
         return max_error
 
-    domain = [{'name': 'eps0', 'type': 'continuous', 'domain': (0.001, epsilon/10)},
-              {'name': 'noise', 'type': 'continuous', 'domain': (0.75, 3)}]
+#     domain = [{'name': 'eps0', 'type': 'continuous', 'domain': (0.001, epsilon/10)},
+#               {'name': 'noise', 'type': 'continuous', 'domain': (0.75, 3)}]
 
+    domain = [{'name': 'x1', 'type': 'continuous', 'domain': (0,1)},
+              {'name': 'x2', 'type': 'continuous', 'domain': (0,1)}]
 
     optimizer = BayesianOptimization(f=obj_func, 
                                      domain=domain, 
