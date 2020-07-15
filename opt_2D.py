@@ -73,24 +73,25 @@ def post_process(opt, epsilon):
     data = np.array([x,y,z]).T
     df = pd.DataFrame(data)
     df.to_csv('opt_2D_eps=%.4f.csv' % (epsilon))
-
-    ######################################################
-    ## Saving to png
-    ######################################################  
-    fig = plt.figure(figsize=plt.figaspect(0.3))
-    fig.suptitle('Dataset ADULT with 3-way marginal queries, eps = %.4f optimized over eps0 and noise' % (epsilon))
-
-    # First subplot - scatter plot
-    ax = fig.add_subplot(1,2,1, projection='3d', xlabel="eps0", ylabel="noise",zlabel="max_error")
-    ax.scatter(x,y,z)
-    # Second subplot - bar plot
-    ax = fig.add_subplot(1,2,2, projection='3d', xlabel="eps0", ylabel="noise",zlabel="max_error")
-    ax.bar(x, z, y, width=(max(x)-min(x))/28, zdir='y', alpha=0.7)
-    ax.set_yticks([0.75,1,1.25])
-
-    plt.savefig('opt_2D_eps=%.4f.png' % (epsilon))
-
+    
     opt.plot_convergence('opt_conv_%.4f.png' % (epsilon))
+    opt.plot_acquisition('opt_acq_%.4f.png' % (epsilon))
+    
+#     ######################################################
+#     ## Saving to png
+#     ######################################################  
+#     fig = plt.figure(figsize=plt.figaspect(0.3))
+#     fig.suptitle('Dataset ADULT with 3-way marginal queries, eps = %.4f optimized over eps0 and noise' % (epsilon))
+
+#     # First subplot - scatter plot
+#     ax = fig.add_subplot(1,2,1, projection='3d', xlabel="eps0", ylabel="noise",zlabel="max_error")
+#     ax.scatter(x,y,z)
+#     # Second subplot - bar plot
+#     ax = fig.add_subplot(1,2,2, projection='3d', xlabel="eps0", ylabel="noise",zlabel="max_error")
+#     ax.bar(x, z, y, width=(max(x)-min(x))/28, zdir='y', alpha=0.7)
+#     ax.set_yticks([0.75,1,1.25])
+
+#     plt.savefig('opt_2D_eps=%.4f.png' % (epsilon))
 
 def opt_grid_search(data, query_manager,samples, max_iter, timeout=300, show_prgress=False):
     epsarr = [0.1 ,0.2, 0.3, 0.4, 0.5]
