@@ -50,8 +50,7 @@ def optimize(data, query_manager, epsilon, samples=200, max_iter=None, max_time=
 
     optimizer = BayesianOptimization(f=obj_func, 
                                      domain=domain, 
-                                     normalize_Y=False, 
-                                     exact_feval=True)
+                                     normalize_Y=False)
     optimizer.run_optimization(max_iter=max_iter, max_time=max_time)
 
     print("Value of (x,y) that minimises the objective:"+str(optimizer.x_opt))    
