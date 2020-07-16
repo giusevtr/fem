@@ -76,7 +76,29 @@ def random_search(data, query_manager, epsilon, samples=200, max_iter=None, max_
     fig.savefig('RS_epsilon=%.4f.png' % (epsilon))
 
     print("Minimum value of the objective: "+str(min_y)) 
+    
+    return min_y
 
+def RS_grid_search(data, query_manager,samples, max_iter, timeout=300, show_prgress=False):
+    epsarr = [0.1, 0.15, 0.2, 0.25, 0.5, 1]
+    errors = []
+    for eps in epsarr:
+        min_y = random_search(data=data, 
+                              query_manager=query_manager, 
+                              epsilon=eps, 
+                              samples=samples, 
+                              max_iter=max_iter,
+                              timeout=timeout, 
+                              show_prgress=show_prgress)
+        errors.append(min_y)
+
+    results= [epsarr, errors]
+    print(results)
+
+    names = ["eps" ,"max_error"]
+    df = pd.DataFrame(np.array(results).T, columns=names)
+    df.to_csv('out.csv')
+    
 if __name__ == "__main__":
     description = ''
     formatter = argparse.ArgumentDefaultsHelpFormatter
@@ -98,10 +120,15 @@ if __name__ == "__main__":
     print("Number of queries = ", len(query_manager.queries))
     print("epsilon = ", eps, "=========>")    
 
-    random_search(data=data,
-                  query_manager=query_manager,
-                  epsilon=eps,
-                  samples=args.samples[0],
-                  max_iter=10,
-                  timeout=300)
+#     random_search(data=data,
+#                   query_manager=query_manager,
+#                   epsilon=eps,
+#                   samples=args.samples[0],
+#                   max_iter=10,
+#                   timeout=300)
 
+    RS_grid_search(data=data,
+              query_manager=query_manager,
+              samples=args.samples[0],
+              max_iter=50,
+              timeout=300)
