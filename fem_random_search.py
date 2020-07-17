@@ -45,7 +45,7 @@ def random_search(data, query_manager, epsilon, samples=200, max_iter=None, max_
         print()
         return max_error
 
-    x1_domain = (0.001, 0.025)
+    x1_domain = (0.001, epsilon/10)
     x2_domain = (0.75, 3)
     results = pd.DataFrame(columns = ['eps0', 'noise', 'max_error'], index=list(range(max_iter)))
 
