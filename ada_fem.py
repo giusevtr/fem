@@ -1,21 +1,19 @@
 import sys
 sys.path.append("../private-pgm/src")
-from mbi import Dataset, Domain
-from qm import QueryManager
+from mbi import Dataset
+from Util.qm import QueryManager
 import argparse
 import numpy as np
 import time
 import pandas as pd
 import multiprocessing as mp
-import oracle
-import util
-import benchmarks
+from Util import oracle, util2, benchmarks
 from tqdm import tqdm
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s
     for i in range(s):
-        x = oracle.solve(qW, neg_qW, noise[i,:], domain, alpha)
+        x = oracle.solve(qW, neg_qW, noise[i, :], domain, alpha)
         fake_data.append(x)
 
 
@@ -35,8 +33,8 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
     neg_queries = []
     rho_comp = 0.0000
 
-    q1 = util.sample(np.ones(Q_size) / Q_size)
-    q2 = util.sample(np.ones(Q_size) / Q_size)
+    q1 = util2.sample(np.ones(Q_size) / Q_size)
+    q2 = util2.sample(np.ones(Q_size) / Q_size)
     prev_queries.append(q1)  ## Sample a query from the uniform distribution
     neg_queries.append(q2)  ## Sample a query from the uniform distribution
 
@@ -49,7 +47,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
 
 
     # T = util.get_rounds(epsilon, epsilon_0, delta)
-    T = util.get_rounds_zCDP(epsilon, epsilon_0, adaptive, delta)
+    T = util2.get_rounds_zCDP(epsilon, epsilon_0, adaptive, delta)
     if show_prgress:
         progress_bar = tqdm(total=T)
     status = 'OK'
@@ -71,7 +69,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
         """
         Sample s times from FTPL
         """
-        util.blockPrint()
+        util2.blockPrint()
         num_processes = 8
         s2 = int(1.0 + samples / num_processes)
         samples_rem = samples
@@ -96,7 +94,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
         for p in processes:
             p.join()
 
-        util.enablePrint()
+        util2.enablePrint()
         oh_fake_data = []
         assert len(fake_temp) > 0
         for x in fake_temp:
@@ -111,7 +109,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
             assert len(oh_fake_data[i]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
         assert not final_syn_data or len(final_syn_data[0]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
 
-        fake_data = Dataset(pd.DataFrame(util.decode_dataset(oh_fake_data, domain), columns=domain.attrs), domain)
+        fake_data = Dataset(pd.DataFrame(util2.decode_dataset(oh_fake_data, domain), columns=domain.attrs), domain)
 
         """
         Compute Exponential Mechanism distribution
@@ -131,7 +129,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
         """
         Sample from EM
         """
-        q_t_ind = util.sample(EM_dist)
+        q_t_ind = util2.sample(EM_dist)
 
         if q_t_ind < Q_size:
             prev_queries.append(q_t_ind)
@@ -146,7 +144,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, adaptiv
             # Return top halve
             final_syn_data = np.array(final_syn_data)
             final_syn_data = final_syn_data[T//2:, :]
-        fake_data = Dataset(pd.DataFrame(util.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
+        fake_data = Dataset(pd.DataFrame(util2.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
     if show_prgress:progress_bar.close()
     return fake_data, status
 

@@ -1,6 +1,6 @@
 import sys
 sys.path.append("../private-pgm/src")
-import util
+from Util import util2
 import pytest
 
 # class TestComposition:
@@ -10,6 +10,6 @@ def test_get_rounds(epsilon, eps0):
     # epsilon = 1
     delta = 1e-8
     # eps0 = 0.1
-    T1 = util.get_rounds(epsilon, eps0, delta)
-    T2 = util.get_rounds_zCDP(epsilon, eps0, delta)
+    T1 = util2.get_rounds(epsilon, eps0, delta)
+    T2 = util2.get_rounds_zCDP(epsilon, eps0, delta)
     assert T1 == T2
