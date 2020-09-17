@@ -1,8 +1,8 @@
 import sys
 sys.path.append("../private-pgm/src")
-from mbi import Dataset, Domain
+from mbi import Domain
 from Util.util import get_dummy_data2
-from qm import QueryManager
+from Util.qm import QueryManager
 
 class TestQM:
     @classmethod

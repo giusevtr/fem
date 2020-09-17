@@ -1,12 +1,12 @@
 import sys, os
 sys.path.append("../private-pgm/src")
-from qm import QueryManager
+from Util.qm import QueryManager
 import argparse
 import numpy as np
 import time
 import pandas as pd
-from tqdm import tqdm, trange
-import benchmarks
+from tqdm import tqdm
+from Util import benchmarks
 import itertools
 from fem import generate
 

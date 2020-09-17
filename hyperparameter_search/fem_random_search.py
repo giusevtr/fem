@@ -1,23 +1,16 @@
 import sys
 sys.path.append("../private-pgm/src")
-from mbi import Dataset, Domain
-from qm import QueryManager
+from Util.qm import QueryManager
 import argparse
 import numpy as np
 import time
 import pandas as pd
-import multiprocessing as mp
-import oracle
-import util
-from tqdm import tqdm
-import benchmarks
-import itertools
+from Util import benchmarks
 
 from fem import generate
 
 import random
 
-import matplotlib
 import matplotlib.pyplot as plt
 
 def random_search(data, query_manager, epsilon, samples=200, max_iter=None, max_time=None, timeout=300, show_prgress=False):
