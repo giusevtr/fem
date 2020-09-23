@@ -9,7 +9,7 @@ import pandas as pd
 import multiprocessing as mp
 from Util import oracle, util2, benchmarks
 from tqdm import tqdm
-
+import matplotlib.pyplot as plt
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s
@@ -182,21 +182,10 @@ if __name__ == "__main__":
     query_manager = QueryManager(data.domain, workloads)
     print("Number of queries = ", len(query_manager.queries))
 
-    # df = pd.DataFrame(np.zeros((10, len(data.domain.shape))), columns=data.domain.attrs)
-    # zeros = Dataset(df, data.domain)
-    # ans = query_manager.get_answer(data)
-    # zero_ans = query_manager.get_answer(zeros)
-    # print('max = ', ans.max())
-    # print('mean = ', ans.mean())
-    # print('zero max = ', zero_ans.max())
-    # plt.subplot(2,1,1)
-    # plt.hist(ans)
-    # plt.yscale('log')
-    # plt.subplot(2,1,2)
-    # plt.hist(zero_ans)
-    # plt.yscale('log')
-    # plt.show()
-
+    ans = query_manager.get_answer(data)
+    plt.hist(ans)
+    plt.yscale('log')
+    plt.show()
 
     for eps in args.epsilon:
         print("epsilon = ", eps, "=========>")
