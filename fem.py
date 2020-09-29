@@ -141,7 +141,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
         if status == 'OK':
             # Return top halve
             final_syn_data = np.array(final_syn_data)
-            final_syn_data = final_syn_data[T//2:, :]
+            final_syn_data = final_syn_data[T*samples//2:, :]
         fake_data = Dataset(pd.DataFrame(util2.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
     if show_prgress:progress_bar.close()
     return fake_data, status
@@ -169,12 +169,6 @@ if __name__ == "__main__":
     data, workloads = benchmarks.randomKway(args.dataset[0], args.workload[0], args.marginal[0])
     N = data.df.shape[0]
 
-
-    # print("True answers: ")
-    # for proj in workloads:
-    #     dp = data.project(proj).datavector()
-    #     print(dp[:10])
-    # print("============")
     ######################################################
     ## Get Queries
     ######################################################
@@ -183,9 +177,9 @@ if __name__ == "__main__":
     print("Number of queries = ", len(query_manager.queries))
 
     ans = query_manager.get_answer(data)
-    plt.hist(ans)
-    plt.yscale('log')
-    plt.show()
+    # plt.hist(ans)
+    # plt.yscale('log')
+    # plt.show()
 
     for eps in args.epsilon:
         print("epsilon = ", eps, "=========>")
