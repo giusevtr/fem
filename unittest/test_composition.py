@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../private-pgm/src")
 from Util import util2
 import pytest
 

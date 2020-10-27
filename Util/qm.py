@@ -2,10 +2,6 @@ import numpy as np
 import itertools
 from collections.abc import Iterable
 
-import sys
-# sys.path.append("../private-pgm/src")
-
-
 class QueryManager():
     """< 1e-9
     K-marginal queries manager

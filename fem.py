@@ -1,6 +1,3 @@
-import sys
-# sys.path.append("../private-pgm/src")
-# from mbi import Dataset
 from datasets.dataset import Dataset
 from Util.qm import QueryManager
 import argparse
@@ -10,7 +7,6 @@ import pandas as pd
 import multiprocessing as mp
 from Util import oracle, util2, benchmarks
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s
@@ -29,11 +25,9 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     N = data.df.shape[0]
     Q_size = query_manager.num_queries
     delta = 1.0 / N ** 2
-    beta = 0.05  ## Fail probability
 
     prev_queries = []
     neg_queries = []
-    rho_comp = 0.0000
 
     q1 = util2.sample(np.ones(Q_size) / Q_size)
     q2 = util2.sample(np.ones(Q_size) / Q_size)
@@ -46,7 +40,6 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     final_syn_data = []
     fem_start_time = time.time()
     temp = []
-
 
     T = util2.get_rounds(epsilon, epsilon_0, delta)
     if show_prgress:
@@ -63,7 +56,6 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
         if (timeout is not None) and t >= 1 and (time.time() - fem_start_time)*T/t > timeout:
             status = 'Ending Early ({:.2f}s) '.format((time.time() - fem_start_time)*T/t)
             break
-
 
         """
         Sample s times from FTPL
@@ -99,8 +91,6 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
         for x in fake_temp:
             oh_fake_data.append(x)
             temp.append(x)
-            # if current_eps >= epsilon / 2:  ## this trick haves the final error
-            # if t >= T / 2:  ## this trick haves the final error
             final_syn_data.append(x)
 
         assert len(oh_fake_data) == samples, "len(D_hat) = {} len(fake_data_ = {}".format(len(oh_fake_data), len(fake_temp))
@@ -134,12 +124,6 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
             prev_queries.append(q_t_ind)
         else:
             neg_queries.append(q_t_ind - Q_size)
-
-        # debug
-        # fake_data = Dataset(pd.DataFrame(util2.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
-        # max_error = np.max(np.abs(query_manager.get_answer(fake_data)-real_answers))
-        # print(f't={t}. max error = {max_error}')
-
 
     if len(final_syn_data) == 0:
         status = status + '---syn data.'
@@ -184,9 +168,6 @@ if __name__ == "__main__":
     print("Number of queries = ", len(query_manager.queries))
 
     ans = query_manager.get_answer(data)
-    # plt.hist(ans)
-    # plt.yscale('log')
-    # plt.show()
 
     for eps in args.epsilon:
         print("epsilon = ", eps, "=========>")

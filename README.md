@@ -8,14 +8,7 @@ Install some packages
 ```
 conda install numpy 
 conda install pandas
-```
-
-Then get private-pgm projet
-```
-cd /home/
-git clone https://github.com/ryan112358/private-pgm.git
-cd /home/private-pgm
-pip install -r requirements.txt
+conda install -c conda-forge tqdm
 ```
 
 Install gurobipy (https://www.gurobi.com/gurobi-and-anaconda-for-windows/)
@@ -25,7 +18,6 @@ conda install gurobi
 ````
 
 ````
-conda install -c conda-forge tqdm
 cd /home/FEM
 ````
 

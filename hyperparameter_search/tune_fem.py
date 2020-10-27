@@ -2,8 +2,7 @@ import itertools
 import fem
 import time
 import sys
-sys.path.append("../private-pgm/src")
-from mbi import Dataset
+from datasets.dataset import Dataset
 import numpy as np
 from tqdm import tqdm
 import pandas as pd

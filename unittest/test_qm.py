@@ -1,6 +1,5 @@
 import sys
-sys.path.append("../private-pgm/src")
-from mbi import Domain
+from datasets.domain import Domain
 from Util.util import get_dummy_data2
 from Util.qm import QueryManager
 

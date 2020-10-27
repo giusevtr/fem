@@ -1,3 +1,0 @@
-num_runs,dataset,workload,marginal,eps0,epsilon,support_frac,workload_seed,sf_seed,sample_support,debug,add_random_support,dq_rounds,run,support_size,start_error,max_error
-5,adult,64,5,0.003,0.1,0.0005,0,0,False,False,0,,3,24,0.13673341250017065,0.1260824207425834
-5,adult,64,5,0.003,0.1,0.0005,0,1,False,False,0,,1,24,0.11511097006674584,0.1082313994663536

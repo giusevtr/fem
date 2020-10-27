@@ -1,7 +1,5 @@
 import sys
-sys.path.append("../private-pgm/src")
-from mbi import Dataset, Domain
-
+from datasets.dataset import Dataset
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

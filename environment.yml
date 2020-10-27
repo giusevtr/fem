@@ -117,7 +117,6 @@ dependencies:
   - pip:
     - gpy==1.9.9
     - gpyopt==1.2.6
-    - matplotlib==3.2.1
     - networkx==2.4
     - nose==1.3.7
     - numpy==1.18.4

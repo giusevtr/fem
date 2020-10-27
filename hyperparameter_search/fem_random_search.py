@@ -1,5 +1,4 @@
 import sys
-sys.path.append("../private-pgm/src")
 from Util.qm import QueryManager
 import argparse
 import numpy as np
