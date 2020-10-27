@@ -1,14 +1,12 @@
 import numpy as np
 
-import sys
-sys.path.append("../private-pgm/src")
-from mbi import Dataset
+from datasets.dataset import Dataset
 import itertools
 
 
 def randomKway(name, number, marginal, seed=0):
-    path = "Datasets/{}.csv".format(name)
-    domain = "Datasets/{}-domain.json".format(name)
+    path = "datasets/{}.csv".format(name)
+    domain = "datasets/{}-domain.json".format(name)
     data = Dataset.load(path, domain)
     return data, randomKwayData(data, number, marginal, seed)
 

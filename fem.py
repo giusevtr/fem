@@ -1,6 +1,7 @@
 import sys
-sys.path.append("../private-pgm/src")
-from mbi import Dataset
+# sys.path.append("../private-pgm/src")
+# from mbi import Dataset
+from datasets.dataset import Dataset
 from Util.qm import QueryManager
 import argparse
 import numpy as np
@@ -133,6 +134,12 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
             prev_queries.append(q_t_ind)
         else:
             neg_queries.append(q_t_ind - Q_size)
+
+        # debug
+        # fake_data = Dataset(pd.DataFrame(util2.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
+        # max_error = np.max(np.abs(query_manager.get_answer(fake_data)-real_answers))
+        # print(f't={t}. max error = {max_error}')
+
 
     if len(final_syn_data) == 0:
         status = status + '---syn data.'

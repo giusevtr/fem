@@ -90,8 +90,9 @@ def optimize_parameters(epsilon, query_manager, data_domain, data_size, n_ave=3,
     samples = 100
     print("Tunning FEM")
 
-    epsarr = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009]
-    noisearr = [0.5, 0.7, 0.8, 0.9, 1, 1.5, 2, 3]
+    # epsarr = [0.0015, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009]
+    epsarr = [0.0015, 0.002, 0.0025, 0.003]
+    noisearr = [0.7, 0.9, 1.1, 1.5, 2, 2.5]
     min_error = 1
     progress = tqdm(total=len(epsarr)*len(noisearr)*n_ave)
     res = []

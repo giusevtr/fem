@@ -3,7 +3,7 @@ import itertools
 from collections.abc import Iterable
 
 import sys
-sys.path.append("../private-pgm/src")
+# sys.path.append("../private-pgm/src")
 
 
 class QueryManager():
@@ -78,11 +78,25 @@ class QueryManager():
             W = np.array(W)
         return W, weights
 
-    def get_answer(self, data, debug=False):
+    # def get_answer(self, data, debug=False):
+    #     ans_vec = np.array([])
+    #     N_sync = data.df.shape[0]
+    #     # for proj, W in self.workloads:
+    #     for proj in self.workloads:
+    #         x = data.project(proj).datavector() / N_sync
+    #         ans_vec = np.append(ans_vec, x)
+    #     return ans_vec
+
+
+
+    def get_answer(self, data, weights=None, normalize=True, debug=False):
         ans_vec = np.array([])
         N_sync = data.df.shape[0]
         # for proj, W in self.workloads:
         for proj in self.workloads:
-            x = data.project(proj).datavector() / N_sync
+            # weights let's you do a weighted sum
+            x = data.project(proj).datavector(weights=weights)
+            if weights is None and normalize:
+                x = x / N_sync
             ans_vec = np.append(ans_vec, x)
         return ans_vec
