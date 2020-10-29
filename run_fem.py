@@ -65,5 +65,4 @@ if __name__ == "__main__":
         dfprev = pd.read_csv(fpath)
         df = df.append(dfprev, sort=False)
 
-
     df.to_csv(fpath, index=False)

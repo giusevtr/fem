@@ -17,14 +17,10 @@ conda config --add channels http://conda.anaconda.org/gurobi
 conda install gurobi
 ````
 
-````
-cd /home/FEM
-````
-
 # Execution
 You can run FEM with the following command:
 ```
-
+cd /home/FEM
 python fem.py <dataset> <workload> <marginal> <eps0> <noise> <samples> <epsilon> 
 ```
 For example

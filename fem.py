@@ -1,4 +1,5 @@
 from datasets.dataset import Dataset
+
 from Util.qm import QueryManager
 import argparse
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 import multiprocessing as mp
 from Util import oracle, util2, benchmarks
 from tqdm import tqdm
+
 
 def gen_fake_data(fake_data, qW, neg_qW, noise, domain, alpha, s):
     assert noise.shape[0] == s

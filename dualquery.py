@@ -1,6 +1,5 @@
 import numpy as np
 import sys,os
-sys.path.append("../private-pgm/src")
 import pandas as pd
 from datasets.dataset import Dataset
 from Util import oracle_dq, util2, benchmarks
@@ -11,7 +10,7 @@ def search_T(eps, n, delta, eta, s):
     hi = 100000
     for _ in range(200):
         temp_T = (lo + hi) // 2
-        temp_eps =  (2*eta*(temp_T-1)/n)*(np.sqrt(2*s*(temp_T-1)*np.log(1/delta)) + s*(temp_T-1)*(np.exp(2*eta*(temp_T-1)/n)-1))
+        temp_eps = (2*eta*(temp_T-1)/n)*(np.sqrt(2*s*(temp_T-1)*np.log(1/delta)) + s*(temp_T-1)*(np.exp(2*eta*(temp_T-1)/n)-1))
         # print("T={}   t_eps={:.5f}".format(temp_T, temp_eps))
         if temp_eps <= eps:
             lo = temp_T

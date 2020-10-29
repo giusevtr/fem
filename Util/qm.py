@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 from collections.abc import Iterable
 
+
 class QueryManager():
     """< 1e-9
     K-marginal queries manager
