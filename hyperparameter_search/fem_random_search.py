@@ -1,4 +1,3 @@
-import sys
 from Util.qm import QueryManager
 import argparse
 import numpy as np

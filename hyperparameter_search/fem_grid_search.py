@@ -1,4 +1,4 @@
-import sys, os
+import os
 from Util.qm import QueryManager
 import argparse
 import numpy as np
@@ -16,9 +16,13 @@ ONE = np.ones(3)
 # noisearr = [1, 2, 3]
 
 
-def fem_grid_search(data, epsilon, query_manager, n_ave=5, timeout=300):
-    epsarr = [0.003, 0.005, 0.007, 0.009, 0.011, 0.015, 0.017, 0.19]
-    noisearr = [1, 2, 3, 4]
+def fem_grid_search(data, epsilon, query_manager, n_ave, timeout=300):
+    # epsarr = [0.003, 0.005, 0.007, 0.009, 0.011, 0.015, 0.017, 0.19]
+    # noisearr = [1, 2, 3, 4]
+
+    epsarr = [ 0.0013, 0.0015, 0.0017]
+    # noisearr = [0.7, 0.9, 1.1, 1.5, 2, 2.5]
+    noisearr = [0.4, 0.5, 0.6, 0.8]
 
     # epsarr = 0.003 * ONE + 0.0005 * A
     # noisearr = ONE + 0.25 * A
@@ -42,7 +46,6 @@ def fem_grid_search(data, epsilon, query_manager, n_ave=5, timeout=300):
             progress.update()
             progress.set_postfix({'e0': eps0, 'noise': noise, 'error': max_error, 'min_error':min_error, 'runtime': elapsed_time, 'status':status})
 
-
     names = ["epsilon", "epsilon_0", "noise", "error", "runtime"]
     return pd.DataFrame(res, columns=names)
 
@@ -55,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
-    parser.add_argument('--nave', type=int, nargs='+', default=3, help='Number of runs')
+    parser.add_argument('--nave', type=int, default=1, help='Number of runs')
     args = parser.parse_args()
     print(vars(args))
 
@@ -67,6 +70,9 @@ if __name__ == "__main__":
     stime = time.time()
     query_manager = QueryManager(data.domain, workloads)
     print("Number of queries = ", len(query_manager.queries))
+    print('computing real answers...', end='')
+    query_manager.real_answers = query_manager.get_answer(data)
+    print('Done!')
     final_df = None
     for eps in args.epsilon:
         print("epsilon = ", eps, "=========>")
@@ -84,4 +90,5 @@ if __name__ == "__main__":
     if os.path.exists(file_name):
         dfprev = pd.read_csv(file_name)
         final_df = final_df.append(dfprev, sort=False)
+    os.makedirs('Results', exist_ok=True)
     final_df.to_csv(file_name, index=False)

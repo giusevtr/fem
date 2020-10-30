@@ -1,7 +1,6 @@
 import itertools
 import fem
 import time
-import sys
 from datasets.dataset import Dataset
 import numpy as np
 from tqdm import tqdm
@@ -83,14 +82,14 @@ def get_dummy_data(domain, data_size, query_manager=None):
     return data
 
 
-def optimize_parameters(epsilon, query_manager, data_domain, data_size, n_ave=3, timeout=600):
+def optimize_parameters(epsilon, query_manager, data_domain, data_size, n_ave=1, timeout=600):
     eps_0 = 0.009
     scale = 1
     samples = 100
     print("Tunning FEM")
 
     # epsarr = [0.0015, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009]
-    epsarr = [0.0015, 0.002, 0.0025, 0.003]
+    epsarr = [0.0017, 0.002, 0.0025, 0.003]
     noisearr = [0.7, 0.9, 1.1, 1.5, 2, 2.5]
     min_error = 1
     progress = tqdm(total=len(epsarr)*len(noisearr)*n_ave)
@@ -105,10 +104,11 @@ def optimize_parameters(epsilon, query_manager, data_domain, data_size, n_ave=3,
 
             start_time = time.time()
             syndata = fem.generate(data=dummy_data, query_manager=query_manager, epsilon=epsilon, epsilon_0=e,
-                                   exponential_scale=noise, samples=samples, show_prgress=False)
+                                   exponential_scale=noise, samples=samples, show_prgress=True)
             elapsed_time = time.time() - start_time
 
-            progress.update(n_ave - it)
+            # progress.update(n_ave - it)
+            progress.update(1)
             if elapsed_time > timeout:
                 errors = None
                 break

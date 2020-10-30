@@ -8,6 +8,7 @@ class QueryManager():
     K-marginal queries manager
     """
     def __init__(self, domain, workloads):
+        self.real_answers = None
         self.domain = domain
         self.workloads = workloads
         self.att_id = {}
@@ -75,18 +76,7 @@ class QueryManager():
             W = np.array(W)
         return W, weights
 
-    # def get_answer(self, data, debug=False):
-    #     ans_vec = np.array([])
-    #     N_sync = data.df.shape[0]
-    #     # for proj, W in self.workloads:
-    #     for proj in self.workloads:
-    #         x = data.project(proj).datavector() / N_sync
-    #         ans_vec = np.append(ans_vec, x)
-    #     return ans_vec
-
-
-
-    def get_answer(self, data, weights=None, normalize=True, debug=False):
+    def get_answer(self, data, weights=None, normalize=True):
         ans_vec = np.array([])
         N_sync = data.df.shape[0]
         # for proj, W in self.workloads:

@@ -1,15 +1,13 @@
 import numpy as np
 import pandas as pd
-import sys,os
+import os
 from Util.qm import QueryManager
 import time
 import argparse
-
-sys.path.append("../private-pgm/src")
 import fem
 from hyperparameter_search import tune_fem
-
 from Util import benchmarks
+
 
 if __name__ == "__main__":
     description = ''

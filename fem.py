@@ -36,7 +36,10 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     prev_queries.append(q1)  ## Sample a query from the uniform distribution
     neg_queries.append(q2)  ## Sample a query from the uniform distribution
 
-    real_answers = query_manager.get_answer(data, debug=False)
+    if query_manager.real_answers is not None:
+        real_answers = query_manager.real_answers
+    else:
+        real_answers = query_manager.get_answer(data)
     neg_real_answers = 1 - real_answers
 
     final_syn_data = []
@@ -105,7 +108,7 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
         """
         Compute Exponential Mechanism distribution
         """
-        fake_answers = query_manager.get_answer(fake_data, debug=False)
+        fake_answers = query_manager.get_answer(fake_data)
         neg_fake_answers = 1 - fake_answers
 
         score = np.append(real_answers - fake_answers, neg_real_answers - neg_fake_answers)
