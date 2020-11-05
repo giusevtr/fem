@@ -21,7 +21,11 @@ def get_eps0(eps0, r1, t):
     return eps0 + r1*t
 
 
-def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
+# def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
+def generate(data, query_manager, epsilon, epsilon_split, noise_multiple, samples, alpha=0, timeout=None, show_prgress=True):
+    assert epsilon_split > 1
+    assert noise_multiple > 0
+
     domain = data.domain
     D = np.sum(domain.shape)
     N = data.df.shape[0]
@@ -45,6 +49,10 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
     final_syn_data = []
     fem_start_time = time.time()
     temp = []
+
+    # FEM params
+    epsilon_0 = epsilon / epsilon_split
+    exponential_scale = epsilon * noise_multiple
 
     T = util2.get_rounds(epsilon, epsilon_0, delta)
     if show_prgress:
@@ -115,7 +123,8 @@ def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples
 
         EM_dist_0 = np.exp(epsilon_0 * score * N / 2, dtype=np.float128)
         sum = np.sum(EM_dist_0)
-        assert sum > 0 and not np.isinf(sum)
+        assert sum > 0
+        assert not np.isinf(sum)
         EM_dist = EM_dist_0 / sum
         assert not np.isnan(EM_dist).any(), "EM_dist_0 = {} EM_dist = {} sum = {}".format(EM_dist_0, EM_dist, sum)
         assert not np.isinf(EM_dist).any(), "EM_dist_0 = {} EM_dist = {} sum = {}".format(EM_dist_0, EM_dist, sum)
