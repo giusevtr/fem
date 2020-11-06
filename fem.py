@@ -146,7 +146,7 @@ def generate(data, query_manager, epsilon, epsilon_split, noise_multiple, sample
         if status == 'OK':
             # Return top halve
             final_syn_data = np.array(final_syn_data)
-            final_syn_data = final_syn_data[T*samples//2:, :]
+            # final_syn_data = final_syn_data[T*samples//2:, :]
         fake_data = Dataset(pd.DataFrame(util2.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
     if show_prgress:progress_bar.close()
     return fake_data, status
