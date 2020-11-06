@@ -1,4 +1,5 @@
 from datasets.dataset import Dataset
+from datasets.domain import Domain
 
 from Util.qm import QueryManager
 import argparse
@@ -21,16 +22,30 @@ def get_eps0(eps0, r1, t):
     return eps0 + r1*t
 
 
+def from_rho_to_epsilon(rho, delta):
+    return rho + 2 * np.sqrt(rho * np.log(1 / delta))
+
+
+def from_epsilon_to_rho(epsilon):
+    return 0.5 * epsilon ** 2
+
 # def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
-def generate(data, query_manager, epsilon, epsilon_split, noise_multiple, samples, alpha=0, timeout=None, show_prgress=True):
+def generate(real_answers:np.array,
+             N:int,
+             domain:Domain,
+             query_manager:QueryManager,
+             epsilon: list,
+             delta: float,
+             epsilon_split: float,
+             noise_multiple: float,
+             samples: int,
+             alpha=0,
+             show_prgress=True):
     assert epsilon_split > 1
     assert noise_multiple > 0
-
-    domain = data.domain
+    neg_real_answers = 1 - real_answers
     D = np.sum(domain.shape)
-    N = data.df.shape[0]
     Q_size = query_manager.num_queries
-    delta = 1.0 / N ** 2
 
     prev_queries = []
     neg_queries = []
@@ -40,35 +55,26 @@ def generate(data, query_manager, epsilon, epsilon_split, noise_multiple, sample
     prev_queries.append(q1)  ## Sample a query from the uniform distribution
     neg_queries.append(q2)  ## Sample a query from the uniform distribution
 
-    if query_manager.real_answers is not None:
-        real_answers = query_manager.real_answers
-    else:
-        real_answers = query_manager.get_answer(data)
-    neg_real_answers = 1 - real_answers
-
-    final_syn_data = []
-    fem_start_time = time.time()
+    rho_synrow = [] # stores the final data
     temp = []
-
-    # FEM params
-    epsilon_0 = epsilon / epsilon_split
-    exponential_scale = epsilon * noise_multiple
-
-    T = util2.get_rounds(epsilon, epsilon_0, delta)
+    # Initialize
+    cumulative_rho = 0
+    epsilon_index = 0
     if show_prgress:
-        progress_bar = tqdm(total=T)
-    status = 'OK'
-    for t in range(T):
-        if show_prgress: progress_bar.update()
-        """
-        End early after timeout seconds 
-        """
-        if (timeout is not None) and time.time() - fem_start_time > timeout:
-            status = 'Timeout'
-            break
-        if (timeout is not None) and t >= 1 and (time.time() - fem_start_time)*T/t > timeout:
-            status = 'Ending Early ({:.2f}s) '.format((time.time() - fem_start_time)*T/t)
-            break
+        progress_bar = tqdm(total=max(epsilon))
+    current_epsilon = 0
+    while True:
+        # update FEM parameter for the current epsilon
+        if show_prgress: progress_bar.update(from_rho_to_epsilon(cumulative_rho, delta)-current_epsilon)
+        current_epsilon = from_rho_to_epsilon(cumulative_rho, delta)
+        if epsilon[epsilon_index] < current_epsilon:
+            epsilon_index += 1
+            if epsilon_index == len(epsilon):break
+
+        epsilon_0 = epsilon[epsilon_index] / epsilon_split
+        exponential_scale = epsilon[epsilon_index] * noise_multiple
+        rho_0 = from_epsilon_to_rho(epsilon_0)
+        cumulative_rho += rho_0
 
         """
         Sample s times from FTPL
@@ -104,12 +110,12 @@ def generate(data, query_manager, epsilon, epsilon_split, noise_multiple, sample
         for x in fake_temp:
             oh_fake_data.append(x)
             temp.append(x)
-            final_syn_data.append(x)
+            rho_synrow.append((cumulative_rho, x))
 
         assert len(oh_fake_data) == samples, "len(D_hat) = {} len(fake_data_ = {}".format(len(oh_fake_data), len(fake_temp))
         for i in range(samples):
             assert len(oh_fake_data[i]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
-        assert not final_syn_data or len(final_syn_data[0]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
+        assert not rho_synrow or len(rho_synrow[0][1]) == D, "D_hat dim = {}".format(len(oh_fake_data[0]))
 
         fake_data = Dataset(pd.DataFrame(util2.decode_dataset(oh_fake_data, domain), columns=domain.attrs), domain)
 
@@ -139,17 +145,20 @@ def generate(data, query_manager, epsilon, epsilon_split, noise_multiple, sample
         else:
             neg_queries.append(q_t_ind - Q_size)
 
-    if len(final_syn_data) == 0:
-        status = status + '---syn data.'
-        fake_data = Dataset.synthetic(domain, 100)
-    else:
-        if status == 'OK':
-            # Return top halve
-            final_syn_data = np.array(final_syn_data)
-            # final_syn_data = final_syn_data[T*samples//2:, :]
-        fake_data = Dataset(pd.DataFrame(util2.decode_dataset(final_syn_data, domain), columns=domain.attrs), domain)
     if show_prgress:progress_bar.close()
-    return fake_data, status
+
+    # Output: this function lets you retrieve the synthetic data for different values of epsilon
+    def fem_data_fun(final_epsilon):
+        fem_data = []
+        for rho, syndata_row in rho_synrow:
+            this_epsilon = from_rho_to_epsilon(rho, delta)
+            if this_epsilon > final_epsilon: break
+            fem_data.append(syndata_row)
+        fem_data = Dataset(pd.DataFrame(util2.decode_dataset(fem_data, domain), columns=domain.attrs), domain)
+        return fem_data
+
+    return fem_data_fun
+    # return fake_data, status
 
 
 if __name__ == "__main__":
@@ -159,10 +168,10 @@ if __name__ == "__main__":
     parser.add_argument('dataset', type=str, nargs=1, help='queries')
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
-    parser.add_argument('eps0', type=float, nargs=1, help='hyperparameter')
-    parser.add_argument('noise', type=float, nargs=1, help='hyperparameter')
-    parser.add_argument('samples', type=int, nargs=1, help='hyperparameter')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
+    parser.add_argument('--epsilon_split', type=float, default=200, help='eps0 hyperparameter')
+    parser.add_argument('--noise_multiple', type=float, default=50, help='noise hyperparameter')
+    parser.add_argument('--samples', type=int, default=50, help='samples hyperparameter')
     args = parser.parse_args()
 
     print("=============================================")
@@ -173,6 +182,7 @@ if __name__ == "__main__":
     ######################################################
     data, workloads = benchmarks.randomKway(args.dataset[0], args.workload[0], args.marginal[0])
     N = data.df.shape[0]
+    delta = 1.0/N**2
 
     ######################################################
     ## Get Queries
@@ -181,17 +191,23 @@ if __name__ == "__main__":
     query_manager = QueryManager(data.domain, workloads)
     print("Number of queries = ", len(query_manager.queries))
 
-    ans = query_manager.get_answer(data)
+    real_ans = query_manager.get_answer(data)
+
+    ######################################################
+    ## Generate synthetic data with eps
+    ######################################################
+    fem_data_fun = generate(real_answers=real_ans,
+                               N=N,
+                               domain=data.domain,
+                               query_manager=query_manager,
+                               epsilon=args.epsilon,
+                               delta=delta,
+                               epsilon_split=args.epsilon_split,
+                               noise_multiple=args.noise_multiple,
+                               samples=args.samples)
 
     for eps in args.epsilon:
-        print("epsilon = ", eps, "=========>")
-        ######################################################
-        ## Generate synthetic data with eps
-        ######################################################
-        start_time = time.time()
-        syndata, status = generate(data=data, query_manager=query_manager, epsilon=eps, epsilon_0=args.eps0[0], exponential_scale=args.noise[0], samples=args.samples[0], timeout=300)
-        elapsed_time = time.time()-start_time
-
+        syndata = fem_data_fun(eps)
         max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
-        print("epsilon, queries, max_error, time, status")
-        print("{},{},{:.5f},{:.5f},{}".format(eps, len(query_manager.queries), max_error, elapsed_time,status))
+        print("epsilon\tqueries\tmax_error\ttime")
+        print("{}\t{}\t{:.5f},".format(eps, len(query_manager.queries), max_error))

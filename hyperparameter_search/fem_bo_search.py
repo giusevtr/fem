@@ -2,6 +2,7 @@ import itertools
 import fem
 import time
 from datasets.dataset import Dataset
+from datasets.domain import Domain
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
@@ -12,9 +13,12 @@ import os
 from Util import benchmarks
 
 
-def fem_bo_search(opt_data: Dataset,
+def fem_bo_search(real_answers:np.array,
+                  N: int,
+                  domain: Domain,
                   query_manager: QueryManager,
                   epsilon: float,
+                  delta: float,
                   epsilon_split_range: tuple,   # should be in (5, 200)
                   noise_multiple_range: tuple,  # should be in (5, 200)
                   samples=30,
@@ -29,14 +33,19 @@ def fem_bo_search(opt_data: Dataset,
         # syndata, status = fem.generate(data=opt_data, query_manager=query_manager, epsilon=epsilon, epsilon_0=e,
         #                        exponential_scale=noise, samples=samples, show_prgress=False)
 
-        syndata, status = fem.generate(data=opt_data, query_manager=query_manager,
-                                       epsilon=epsilon,
-                                       epsilon_split=e_split,
-                                       noise_multiple=noise,
-                                       samples=samples, show_prgress=False)
+        fem_data_func = fem.generate(real_answers=real_answers,
+                                        N=N,
+                                        domain=domain,
+                                        query_manager=query_manager,
+                                        epsilon=[epsilon],
+                                        delta=delta,
+                                        epsilon_split=e_split,
+                                        noise_multiple=noise,
+                                        samples=samples, show_prgress=False)
+        syndata = fem_data_func(epsilon)
         max_error = np.abs(query_manager.real_answers - query_manager.get_answer(syndata)).max()
         progress.update()
-        progress.set_postfix({f'error({e_split:.4f}, {noise:.2f})': max_error, 'status':status})
+        progress.set_postfix({f'error({e_split:.4f}, {noise:.2f})': max_error})
         return max_error
 
     # --- Solve your problem
@@ -70,13 +79,14 @@ if __name__ == "__main__":
     # Get dataset
     data, workloads = benchmarks.randomKway(args.dataset[0], args.workload[0], args.marginal[0])
     N = data.df.shape[0]
+    delta = 1.0/N**2
 
     # Get Queries
     stime = time.time()
     query_manager = QueryManager(data.domain, workloads)
     print("Number of queries = ", len(query_manager.queries))
     print('computing real answers...')
-    query_manager.real_answers = query_manager.get_answer(data)
+    real_answers = query_manager.get_answer(data)
     print('Done!')
     final_df = None
     for eps in args.epsilon:
@@ -84,7 +94,11 @@ if __name__ == "__main__":
         # Generate synthetic data with eps
         start_time = time.time()
         # df = fem_bo_search(data, query_manager, eps, tuple(args.eps0), tuple(args.noise))
-        df = fem_bo_search(data, query_manager, eps,
+        df = fem_bo_search(real_answers=real_answers,
+                           N=N,
+                           query_manager=query_manager,
+                           epsilon=eps,
+                           delta=delta,
                            epsilon_split_range=(args.eps_split_lo, args.eps_split_hi),
                            noise_multiple_range=(args.noise_mult_lo, args.noise_mult_hi))
         elapsed_time = time.time() - start_time
