@@ -41,11 +41,14 @@ def generate(real_answers:np.array,
              samples: int,
              alpha=0,
              show_prgress=True):
-    assert epsilon_split > 1
+    assert epsilon_split > 0
     assert noise_multiple > 0
     neg_real_answers = 1 - real_answers
     D = np.sum(domain.shape)
     Q_size = query_manager.num_queries
+
+    # Calcualte T
+
 
     prev_queries = []
     neg_queries = []
@@ -60,21 +63,32 @@ def generate(real_answers:np.array,
     # Initialize
     cumulative_rho = 0
     epsilon_index = 0
-    if show_prgress:
-        progress_bar = tqdm(total=max(epsilon))
     current_epsilon = 0
+    T = 0
+    epsilon_0_at_time_t = {}
+    cumulative_rho_at_time_t = {}
     while True:
         # update FEM parameter for the current epsilon
-        if show_prgress: progress_bar.update(from_rho_to_epsilon(cumulative_rho, delta)-current_epsilon)
         current_epsilon = from_rho_to_epsilon(cumulative_rho, delta)
         if epsilon[epsilon_index] < current_epsilon:
             epsilon_index += 1
             if epsilon_index == len(epsilon):break
-
-        epsilon_0 = epsilon[epsilon_index] / epsilon_split
-        exponential_scale = epsilon[epsilon_index] * noise_multiple
+        epsilon_0_at_time_t[T] = epsilon[epsilon_index] * epsilon_split
+        epsilon_0 = epsilon_0_at_time_t[T]
         rho_0 = from_epsilon_to_rho(epsilon_0)
         cumulative_rho += rho_0
+        cumulative_rho_at_time_t[T] = cumulative_rho
+        T = T + 1
+
+    exponential_scale = np.sqrt(T) * noise_multiple
+    print(f'T = {T}, noise = {exponential_scale}')
+
+    if show_prgress: progress_bar = tqdm(total=T)
+    for t in range(T):
+        epsilon_0 = epsilon_0_at_time_t[t]
+        if show_prgress:
+            progress_bar.update()
+            progress_bar.set_postfix({'eps0':epsilon_0})
 
         """
         Sample s times from FTPL
@@ -110,7 +124,7 @@ def generate(real_answers:np.array,
         for x in fake_temp:
             oh_fake_data.append(x)
             temp.append(x)
-            rho_synrow.append((cumulative_rho, x))
+            rho_synrow.append((cumulative_rho_at_time_t[t], x))
 
         assert len(oh_fake_data) == samples, "len(D_hat) = {} len(fake_data_ = {}".format(len(oh_fake_data), len(fake_temp))
         for i in range(samples):
@@ -169,8 +183,8 @@ if __name__ == "__main__":
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
-    parser.add_argument('--epsilon_split', type=float, default=200, help='eps0 hyperparameter')
-    parser.add_argument('--noise_multiple', type=float, default=50, help='noise hyperparameter')
+    parser.add_argument('--epsilon_split', type=float, default=0.02, help='eps0 hyperparameter')
+    parser.add_argument('--noise_multiple', type=float, default=0.05, help='noise hyperparameter')
     parser.add_argument('--samples', type=int, default=50, help='samples hyperparameter')
     args = parser.parse_args()
 
