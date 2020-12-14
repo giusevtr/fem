@@ -42,8 +42,8 @@ def fem_bo_search(real_answers:np.array,
                                         epsilon_split=e_split,
                                         noise_multiple=noise,
                                         samples=samples, show_prgress=False)
-        syndata = fem_data_func(epsilon)
-        max_error = np.abs(query_manager.real_answers - query_manager.get_answer(syndata)).max()
+        syndata, _ = fem_data_func(epsilon)
+        max_error = np.abs(real_answers - query_manager.get_answer(syndata)).max()
         progress.update()
         progress.set_postfix({f'error({e_split:.4f}, {noise:.2f})': max_error})
         return max_error
@@ -69,10 +69,10 @@ if __name__ == "__main__":
     parser.add_argument('workload', type=int, nargs=1, help='queries')
     parser.add_argument('marginal', type=int, nargs=1, help='queries')
     parser.add_argument('epsilon', type=float, nargs='+', help='Privacy parameter')
-    parser.add_argument('--eps_split_lo', type=float, default=5, help='eps0 parameter range')
-    parser.add_argument('--eps_split_hi', type=float, default=200, help='eps0 parameter range')
-    parser.add_argument('--noise_mult_lo', type=float, default=5, help='noise parameter range')
-    parser.add_argument('--noise_mult_hi', type=float, default=200, help='noise parameter range')
+    parser.add_argument('--eps_split_lo', type=float, default=0.01, help='eps0 parameter range')
+    parser.add_argument('--eps_split_hi', type=float, default=0.05, help='eps0 parameter range')
+    parser.add_argument('--noise_mult_lo', type=float, default=0.01, help='noise parameter range')
+    parser.add_argument('--noise_mult_hi', type=float, default=0.1, help='noise parameter range')
     args = parser.parse_args()
     print(vars(args))
 
@@ -96,11 +96,13 @@ if __name__ == "__main__":
         # df = fem_bo_search(data, query_manager, eps, tuple(args.eps0), tuple(args.noise))
         df = fem_bo_search(real_answers=real_answers,
                            N=N,
+                           domain=data.domain,
                            query_manager=query_manager,
                            epsilon=eps,
                            delta=delta,
                            epsilon_split_range=(args.eps_split_lo, args.eps_split_hi),
-                           noise_multiple_range=(args.noise_mult_lo, args.noise_mult_hi))
+                           noise_multiple_range=(args.noise_mult_lo, args.noise_mult_hi),
+                           bo_iters=50)
         elapsed_time = time.time() - start_time
 
         if final_df is None:

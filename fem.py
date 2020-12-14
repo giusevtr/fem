@@ -29,6 +29,7 @@ def from_rho_to_epsilon(rho, delta):
 def from_epsilon_to_rho(epsilon):
     return 0.5 * epsilon ** 2
 
+
 # def generate(data, query_manager, epsilon, epsilon_0, exponential_scale, samples, alpha=0, timeout=None, show_prgress=True):
 def generate(real_answers:np.array,
              N:int,
@@ -47,9 +48,6 @@ def generate(real_answers:np.array,
     D = np.sum(domain.shape)
     Q_size = query_manager.num_queries
 
-    # Calcualte T
-
-
     prev_queries = []
     neg_queries = []
 
@@ -63,7 +61,6 @@ def generate(real_answers:np.array,
     # Initialize
     cumulative_rho = 0
     epsilon_index = 0
-    current_epsilon = 0
     T = 0
     epsilon_0_at_time_t = {}
     cumulative_rho_at_time_t = {}
@@ -169,7 +166,7 @@ def generate(real_answers:np.array,
             if this_epsilon > final_epsilon: break
             fem_data.append(syndata_row)
         fem_data = Dataset(pd.DataFrame(util2.decode_dataset(fem_data, domain), columns=domain.attrs), domain)
-        return fem_data
+        return fem_data, rho
 
     return fem_data_fun
     # return fake_data, status
