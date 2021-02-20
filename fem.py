@@ -1,6 +1,6 @@
 from datasets.dataset import Dataset
 from datasets.domain import Domain
-
+import os
 from Util.qm import QueryManager
 import argparse
 import numpy as np
@@ -67,9 +67,9 @@ def generate(real_answers:np.array,
     while True:
         # update FEM parameter for the current epsilon
         current_epsilon = from_rho_to_epsilon(cumulative_rho, delta)
-        if epsilon[epsilon_index] < current_epsilon:
+        if current_epsilon > epsilon[epsilon_index]:
             epsilon_index += 1
-            if epsilon_index == len(epsilon):break
+            if epsilon_index == len(epsilon): break
         epsilon_0_at_time_t[T] = epsilon[epsilon_index] * epsilon_split
         epsilon_0 = epsilon_0_at_time_t[T]
         rho_0 = from_epsilon_to_rho(epsilon_0)
@@ -207,6 +207,7 @@ if __name__ == "__main__":
     ######################################################
     ## Generate synthetic data with eps
     ######################################################
+    fem_start = time.time()
     fem_data_fun = generate(real_answers=real_ans,
                                N=N,
                                domain=data.domain,
@@ -216,9 +217,32 @@ if __name__ == "__main__":
                                epsilon_split=args.epsilon_split,
                                noise_multiple=args.noise_multiple,
                                samples=args.samples)
+    fem_runtime = time.time()-fem_start
+    res = []
 
     for eps in args.epsilon:
-        syndata = fem_data_fun(eps)
+        syndata, rho = fem_data_fun(eps)
         max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(syndata)).max()
+
         print("epsilon\tqueries\tmax_error\ttime")
         print("{}\t{}\t{:.5f},".format(eps, len(query_manager.queries), max_error))
+        temp = [args.dataset[0], len(query_manager.queries), args.workload[0], args.marginal[0], 'FEM', eps,
+                max_error,
+                fem_runtime,
+                f'{args.epsilon_split} {args.noise_multiple} {args.samples}' # parameters
+                ]
+
+        res.append(temp)
+        # if args.save:
+
+    names = ["dataset", "queries", "workload", "marginal", "algorithm", "eps", "max_error", "time", "parameters"]
+
+    fpath = f"Results/FEM_{args.workload[0]}_{args.marginal[0]}.csv"
+    df = pd.DataFrame(res, columns=names)
+
+    if os.path.exists(fpath):
+        dfprev = pd.read_csv(fpath)
+        df = df.append(dfprev, sort=False)
+
+    df.to_csv(fpath, index=False)
+    print("saving {}".format(fpath))
