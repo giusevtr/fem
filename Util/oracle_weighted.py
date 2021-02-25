@@ -2,7 +2,7 @@ import numpy as np
 from gurobipy import *
 
 
-def solve(queries, neg_queries, sigma, domain, alpha):
+def solve(queries, queries_weights, neg_queries, neg_queries_weights, sigma, domain, alpha):
     """
     Gurobi solver for k-way KWayMarginals
     """
@@ -33,10 +33,11 @@ def solve(queries, neg_queries, sigma, domain, alpha):
     model.update()
 
     ## Objective
-    obj1 = quicksum(c[i] for i in range(num_queries))
-    obj2 = quicksum(x[i] * sigma[i] for i in range(dim))
+    obj1 = quicksum(c[i]*queries_weights[i] for i in range(reg_num_queries))
+    obj2 = quicksum(c[i+reg_num_queries]*neg_queries_weights[i] for i in range(neg_num_queries))
+    obj3 = quicksum(x[i] * sigma[i] for i in range(dim))
     #print("sigma ", sigma)
-    model.setObjective(obj1-obj2, GRB.MAXIMIZE)
+    model.setObjective(obj1+obj2-obj3, GRB.MAXIMIZE)
     """
     Each features must have 1
     """
@@ -55,7 +56,7 @@ def solve(queries, neg_queries, sigma, domain, alpha):
     if !x[a] | !x[b] | !x[c] then c[i] <-- 0
     """
     for i in range(neg_num_queries):
-        model.addConstr(quicksum((1-x[j])*neg_queries[i,j] for j in range(dim)) >= c[reg_num_queries + i]- 1e-6)
+        model.addConstr(quicksum((1-x[j])*neg_queries[i, j] for j in range(dim)) >= c[reg_num_queries + i] - 1e-6)
 
     model.optimize()
 
