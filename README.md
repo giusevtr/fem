@@ -27,7 +27,7 @@ python fem.py <dataset> <workload> <marginal> <epsilon_split> <noise_multiple> <
 ```
 For example
 ````
-python fem.py adult 24 3 100 50 100 0.1
+python fem.py adult 24 3 0.002 0.05 100 0.1
 ````
 
 Optimize FEM
