@@ -49,7 +49,7 @@ sh run_fem_grid_search.sh
 
 The results of the grid search were then used to define the parameters in run_fem.sh.
 The next step is to run
-```angular2
+```
 sh run_fem.sh
 ```
 
