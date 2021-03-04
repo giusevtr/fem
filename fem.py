@@ -226,6 +226,7 @@ if __name__ == "__main__":
 
     names = ["dataset", "queries", "workload", "marginal", "algorithm", "eps", "max_error", "time", "parameters"]
 
+    os.makedirs('Results', exist_ok=True)
     fpath = f"Results/FEM_{args.dataset[0]}_{args.workload[0]}_{args.marginal[0]}.csv"
     df = pd.DataFrame(res, columns=names)
 
