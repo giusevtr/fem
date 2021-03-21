@@ -4,7 +4,7 @@
 #declare -a epsarr="0.003 0.005 0.007 0.009";
 declare -a epsarr="0.006 0.007 0.008 0.009 0.01";
 declare -a noise="0.1 0.12 0.14 0.16 0.18";
-declare -a workload="32 64 128 256";
+declare -a workload="32 128 256";
 
 for n in ${noise[@]};
 do
