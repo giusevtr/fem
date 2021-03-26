@@ -1,6 +1,6 @@
 # New oracle-efficient algorithms for private synthetic data release
 
-This is the code repository accompanying the paper [New Oracle-Efficient Algorithms for Private Synthetic Data Release](https://arxiv.org/abs/2007.05453) by Giuseppe Vietri, Grace Tian, Mark Bun, Thomas Steinke, Zhiwei Steven Wu
+This is the code repository accompanying the paper [New Oracle-Efficient Algorithms for Private Synthetic Data Release](https://arxiv.org/abs/2007.05453) by [Giuseppe Vietri](https://sites.google.com/umn.edu/giuseppe-vietri/home), Grace Tian, [Mark Bun](https://cs-people.bu.edu/mbun/), [Thomas Steinke](http://www.thomas-steinke.net/), [Zhiwei Steven Wu](https://zstevenwu.com/).
 
 If you have any questions feel free to email [Giuseppe Vietri](https://sites.google.com/umn.edu/giuseppe-vietri/home).
 
