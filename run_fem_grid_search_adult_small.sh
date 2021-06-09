@@ -10,7 +10,7 @@ do
   for eps0 in ${epsarr[@]};
   do
 #    python generate.py loans 24 5 0.1 0.15 0.20 0.25 0.5 1  newadafem --samples=100 --noise="$n" --eps0="$eps0"
-     python fem.py adult-small 20 3  0.1 0.15 0.20 0.25 0.5 1 --samples=50 --noise_multiple="$n" --epsilon_split="$eps0"
+     python fem.py adult-small 35 3  0.1 0.15 0.20 0.25 0.5 1 --samples=50 --noise_multiple="$n" --epsilon_split="$eps0"
     # python generate.py adult 65 5 0.1 0.15 0.20 1 newadafem --samples=100 --noise="$n" --eps0="$eps0"
   done
 done
