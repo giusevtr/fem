@@ -192,7 +192,6 @@ if __name__ == "__main__":
 
     real_ans = query_manager.get_answer(data)
 
-
     res = []
 
     for eps in args.epsilon:

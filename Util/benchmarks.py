@@ -5,8 +5,12 @@ import itertools
 
 
 def randomKway(name, number, marginal, seed=0):
-    path = "datasets/{}.csv".format(name)
-    domain = "datasets/{}-domain.json".format(name)
+    if name.endswith('-small'):
+        dataset_name = name[:-6]
+    else:
+        dataset_name = name
+    path = f"datasets/{dataset_name}.csv"
+    domain = f"datasets/{name}-domain.json"
     data = Dataset.load(path, domain)
     return data, randomKwayData(data, number, marginal, seed)
 
