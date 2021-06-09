@@ -210,12 +210,14 @@ if __name__ == "__main__":
                             samples=args.samples)
         fem_runtime = time.time() - fem_start
 
-        max_error = np.abs(query_manager.get_answer(data) - query_manager.get_answer(fem_data)).max()
-
+        diff = query_manager.get_answer(data) - query_manager.get_answer(fem_data)
+        max_error = np.abs(diff).max()
+        rmse = np.sqrt(np.sum(diff**2))
         print("epsilon\tmax_error\ttime")
         print("{}\t{:.3f}\t{:.3f},".format(eps, max_error, fem_runtime))
         temp = [args.dataset[0], len(query_manager.queries), args.workload[0], args.marginal[0], 'FEM', eps,
                 max_error,
+                rmse,
                 fem_runtime,
                 f'{args.epsilon_split} {args.noise_multiple} {args.samples}' # parameters
                 ]
@@ -223,7 +225,7 @@ if __name__ == "__main__":
         res.append(temp)
         # if args.save:
 
-    names = ["dataset", "queries", "workload", "marginal", "algorithm", "eps", "max_error", "time", "parameters"]
+    names = ["dataset", "queries", "workload", "marginal", "algorithm", "eps", "max_error", "rmse", "time", "parameters"]
 
     os.makedirs('Results', exist_ok=True)
     fpath = f"Results/FEM_{args.dataset[0]}_{args.workload[0]}_{args.marginal[0]}.csv"
